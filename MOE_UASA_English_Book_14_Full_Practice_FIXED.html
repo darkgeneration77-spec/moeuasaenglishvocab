@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOE UASA English Book 14 - Full Practice</title>
+<style>
+:root{--navy:#17355c;--blue:#2563eb;--line:#dbe3ef;--pale:#eef5ff}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;color:#1f2937;font-family:Arial,"Noto Sans SC",sans-serif}
+header{background:linear-gradient(135deg,#102a47,#2563eb);color:#fff;padding:30px 18px}
+.wrap{max-width:1180px;margin:auto}
+.tag{display:inline-block;padding:6px 11px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff17;font-weight:700}
+h1{font-size:clamp(28px,5vw,48px);margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:20px}
+.stat{padding:13px;border:1px solid #ffffff35;background:#ffffff18;border-radius:14px}
+.stat b{display:block;font-size:23px}
+nav{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}
+.tools{max-width:1180px;margin:auto;padding:11px 18px;display:flex;gap:9px;flex-wrap:wrap}
+button,select,textarea{font:inherit}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
+.primary{background:var(--blue);color:#fff}
+.soft{background:#e8eef8;color:var(--navy)}
+.danger{background:#fde2df;color:#9d1c14}
+select{padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+main{padding:20px 18px 55px}
+.intro,.box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.intro{border-left:5px solid var(--blue);line-height:1.6}
+.module{margin:20px 0}
+.module h2{color:var(--navy);border-bottom:2px solid #d9e6ff;padding-bottom:8px}
+.question{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0}
+.question h3{margin-top:0;line-height:1.5}
+.choices{display:grid;gap:8px}
+.choice{background:#eef3fa;text-align:left;white-space:pre-line}
+.choice.correct{background:#d9f7e9}
+.choice.wrong{background:#fde2df}
+.explain{display:none;margin-top:10px;padding:10px;background:#f8fafc;border-radius:9px;line-height:1.55}
+.progress{height:11px;background:#e5eaf2;border-radius:999px;overflow:hidden}
+.bar{height:100%;background:var(--blue)}
+.task-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.task{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px}
+.task textarea{width:100%;min-height:170px;padding:12px;border:1px solid #cbd5e1;border-radius:10px}
+.feedback{background:#f8fafc;padding:10px;border-radius:8px;margin-top:10px;line-height:1.5}
+.model{white-space:pre-line;background:#eaf8f1;padding:10px;border-radius:8px;margin-top:10px}
+.wrongitem{padding:9px 0;border-bottom:1px solid var(--line)}
+.hidden{display:none!important}
+@media(max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .tools>*{width:100%}
+  .task-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<span class="tag">Book 14 · Full Practice Version</span>
+<h1>MOE UASA Sentence Patterns Master</h1>
+<p>8 Modules · 40 Actual MCQ Questions · 5 Writing Tasks · Explanations · Wrong Book</p>
+<div class="stats">
+<div class="stat"><b>8</b>Modules</div>
+<div class="stat"><b id="questionCount"></b>MCQ Questions</div>
+<div class="stat"><b id="taskCount"></b>Writing Tasks</div>
+<div class="stat"><b id="wrongCount">0</b>Wrong Book</div>
+<div class="stat"><b id="accuracy">0%</b>Accuracy</div>
+</div></div></header>
+
+<nav><div class="tools">
+<select id="moduleFilter"><option value="">All Modules</option></select>
+<button class="primary" onclick="showAll()">Show All Questions</button>
+<button class="soft" onclick="showWrongOnly()">Wrong Book Only</button>
+<button class="soft" onclick="scrollToWriting()">Writing Practice</button>
+<button class="danger" onclick="resetProgress()">Reset Progress</button>
+</div></nav>
+
+<main class="wrap">
+<div class="intro">
+<b>修正版：</b>Book 14 现在不再只有句型笔记。页面内直接显示40道完整选择题和5道写作练习，每道选择题都有 A–D 选项、正确答案和华语解释。
+</div>
+
+<div class="box">
+<h2 style="color:var(--navy);margin-top:0">Overall Progress</h2>
+<div class="progress"><div id="overall" class="bar"></div></div>
+<p id="progressText"></p>
+</div>
+
+<div id="content"></div>
+
+<section class="module" id="writingSection">
+<h2>9. Writing Practice（写作练习）</h2>
+<div id="writingTasks" class="task-grid"></div>
+</section>
+
+<div class="box">
+<h2 style="color:var(--navy)">Wrong Book 错题本</h2>
+<div id="wrongList"></div>
+</div>
+</main>
+
+<script>
+const QUESTIONS=[{"id": 1, "module": "1. Self-Introduction Patterns（自我介绍）", "q": "Choose the best sentence to introduce your name.", "options": ["My name is Aina.", "Name Aina.", "I name Aina.", "Me is Aina."], "answer": "My name is Aina.", "explain": "完整句型：My name is + 名字。"}, {"id": 2, "module": "1. Self-Introduction Patterns（自我介绍）", "q": "Choose the correct sentence.", "options": ["I am 11 years old.", "I have 11 years old.", "I is 11 years old.", "Me 11 years."], "answer": "I am 11 years old.", "explain": "年龄使用 be 动词：I am 11 years old。"}, {"id": 3, "module": "1. Self-Introduction Patterns（自我介绍）", "q": "Choose the best sentence to state where you live.", "options": ["I live in Penang.", "I am live Penang.", "I living at Penang.", "My live Penang."], "answer": "I live in Penang.", "explain": "地点表达：I live in + 地点。"}, {"id": 4, "module": "1. Self-Introduction Patterns（自我介绍）", "q": "Choose the correct sentence about school.", "options": ["I study at SJKC Harmony.", "I am study SJKC Harmony.", "I studies at school.", "Me studying school."], "answer": "I study at SJKC Harmony.", "explain": "I 后接动词原形 study。"}, {"id": 5, "module": "1. Self-Introduction Patterns（自我介绍）", "q": "Choose the best sentence about a hobby.", "options": ["My hobby is reading.", "My hobby are reading.", "I hobby reading.", "Reading my hobby are."], "answer": "My hobby is reading.", "explain": "单数主语 My hobby 配 is。"}, {"id": 6, "module": "2. Daily Routine Patterns（日常生活）", "q": "Choose the best opening for a daily routine.", "options": ["I usually wake up at six every morning.", "I wake yesterday every morning.", "Usually I am wake six.", "I waking at six."], "answer": "I usually wake up at six every morning.", "explain": "usually + Simple Present，用于日常习惯。"}, {"id": 7, "module": "2. Daily Routine Patterns（日常生活）", "q": "Choose the correct sequence sentence.", "options": ["After that, I have breakfast.", "After that, I had breakfast every day.", "After, breakfast I.", "That after I breakfast."], "answer": "After that, I have breakfast.", "explain": "After that 用来连接下一步骤。"}, {"id": 8, "module": "2. Daily Routine Patterns（日常生活）", "q": "Choose the best evening routine sentence.", "options": ["In the evening, I do my homework.", "At evening, I did homework every day.", "Evening I homework.", "I am homework in evening."], "answer": "In the evening, I do my homework.", "explain": "固定表达：in the evening。"}, {"id": 9, "module": "2. Daily Routine Patterns（日常生活）", "q": "Choose the best bedtime sentence.", "options": ["Before I go to bed, I brush my teeth.", "Before bed I am brush.", "I before go bed brush.", "Before I sleeping, teeth."], "answer": "Before I go to bed, I brush my teeth.", "explain": "Before + 完整从句，句子要有主语和动词。"}, {"id": 10, "module": "2. Daily Routine Patterns（日常生活）", "q": "Choose the correct sentence.", "options": ["Finally, I go to bed at ten.", "Finally I goes bed.", "At final, I sleeped.", "Final I am bed."], "answer": "Finally, I go to bed at ten.", "explain": "Finally 用于最后一步。"}, {"id": 11, "module": "3. Picture Description（看图写作）", "q": "Choose the best sentence to begin describing a picture.", "options": ["I can see many pupils in the park.", "I seeing pupils.", "Can see park people.", "There pupils park."], "answer": "I can see many pupils in the park.", "explain": "I can see + 名词，是看图写作常用句型。"}, {"id": 12, "module": "3. Picture Description（看图写作）", "q": "Choose the correct sentence.", "options": ["There are two boys near the tree.", "There is two boys.", "There have two boys.", "Two boys there are is."], "answer": "There are two boys near the tree.", "explain": "复数名词 two boys 配 There are。"}, {"id": 13, "module": "3. Picture Description（看图写作）", "q": "Choose the best action sentence.", "options": ["They are playing badminton.", "They playing badminton.", "They is play badminton.", "They played now badminton."], "answer": "They are playing badminton.", "explain": "正在进行的动作：are + verb-ing。"}, {"id": 14, "module": "3. Picture Description（看图写作）", "q": "Choose the best weather sentence.", "options": ["The weather is sunny.", "The weather sunny are.", "Weather it sun.", "It weather is sun."], "answer": "The weather is sunny.", "explain": "The weather is + 形容词。"}, {"id": 15, "module": "3. Picture Description（看图写作）", "q": "Choose the best feeling sentence.", "options": ["Everyone looks happy.", "Everyone look happily.", "All person is happy look.", "Everyone looking happy yesterday."], "answer": "Everyone looks happy.", "explain": "Everyone 是第三人称单数，用 looks。"}, {"id": 16, "module": "4. Email Writing（电邮写作）", "q": "Choose the best email opening.", "options": ["Hi Adam,\nHow are you?", "Adam you there?", "Dear maybe Adam.", "Hello without name."], "answer": "Hi Adam,\nHow are you?", "explain": "电邮开头应有称呼和问候。"}, {"id": 17, "module": "4. Email Writing（电邮写作）", "q": "Choose the best purpose sentence.", "options": ["I am writing to invite you to my birthday party.", "I write you birthday.", "Come birthday maybe.", "I party you."], "answer": "I am writing to invite you to my birthday party.", "explain": "I am writing to + 动词，是说明写信目的的标准句型。"}, {"id": 18, "module": "4. Email Writing（电邮写作）", "q": "Choose the best invitation detail.", "options": ["The party will be held this Saturday at 3 p.m. at my house.", "Party Saturday maybe.", "At house party.", "This Saturday house."], "answer": "The party will be held this Saturday at 3 p.m. at my house.", "explain": "高分句要包含日期、时间和地点。"}, {"id": 19, "module": "4. Email Writing（电邮写作）", "q": "Choose the best closing request.", "options": ["Please write back soon.", "Reply maybe.", "You answer.", "Back write."], "answer": "Please write back soon.", "explain": "这是自然、礼貌的电邮结尾。"}, {"id": 20, "module": "4. Email Writing（电邮写作）", "q": "Choose the best sign-off.", "options": ["Take care,\nAli", "Finish Ali", "Okay Ali", "No more Ali"], "answer": "Take care,\nAli", "explain": "电邮结尾可使用 Take care + 姓名。"}, {"id": 21, "module": "5. Guided Writing（引导写作）", "q": "Choose the best first-step connector.", "options": ["First,", "However,", "Because,", "Although,"], "answer": "First,", "explain": "First 用于第一步骤。"}, {"id": 22, "module": "5. Guided Writing（引导写作）", "q": "Choose the best next-step connector.", "options": ["Next,", "In conclusion,", "Although,", "Therefore,"], "answer": "Next,", "explain": "Next 用于下一步骤。"}, {"id": 23, "module": "5. Guided Writing（引导写作）", "q": "Choose the best reason sentence.", "options": ["We should exercise because it keeps us healthy.", "We exercise healthy because.", "Exercise because good.", "We healthy exercise."], "answer": "We should exercise because it keeps us healthy.", "explain": "because 后接完整原因从句。"}, {"id": 24, "module": "5. Guided Writing（引导写作）", "q": "Choose the best example sentence.", "options": ["For example, we can recycle paper.", "Example recycle.", "For example paper.", "Recycle for example is."], "answer": "For example, we can recycle paper.", "explain": "For example 用于举例。"}, {"id": 25, "module": "5. Guided Writing（引导写作）", "q": "Choose the best conclusion sentence.", "options": ["In conclusion, everyone should practise healthy habits.", "Conclusion healthy.", "Finally health thing.", "In conclusion everyone healthy maybe."], "answer": "In conclusion, everyone should practise healthy habits.", "explain": "总结句应重申主题并完整表达。"}, {"id": 26, "module": "6. Story Writing（故事写作）", "q": "Choose the best story opening.", "options": ["One day, I found a wallet near the school gate.", "Wallet near gate.", "One day wallet.", "I gate wallet."], "answer": "One day, I found a wallet near the school gate.", "explain": "故事开头应交代时间、人物和事件。"}, {"id": 27, "module": "6. Story Writing（故事写作）", "q": "Choose the best sudden-event sentence.", "options": ["Suddenly, heavy rain poured down.", "Suddenly rain.", "Rain suddenly is.", "Heavy rain sudden."], "answer": "Suddenly, heavy rain poured down.", "explain": "Suddenly 用于突发事件，句子要完整。"}, {"id": 28, "module": "6. Story Writing（故事写作）", "q": "Choose the best action sentence.", "options": ["Without hesitation, I called for help.", "I help maybe.", "Without hesitation help.", "I was call help."], "answer": "Without hesitation, I called for help.", "explain": "Without hesitation 可提升故事动作表达。"}, {"id": 29, "module": "6. Story Writing（故事写作）", "q": "Choose the best ending.", "options": ["In the end, everyone was safe.", "End everyone safe.", "Finally safe maybe.", "At ending all safe is."], "answer": "In the end, everyone was safe.", "explain": "In the end 用于故事结果。"}, {"id": 30, "module": "6. Story Writing（故事写作）", "q": "Choose the best moral sentence.", "options": ["I learnt that honesty is the best policy.", "Honesty lesson.", "I learn honest.", "Policy good."], "answer": "I learnt that honesty is the best policy.", "explain": "故事结尾可加入道德价值。"}, {"id": 31, "module": "7. Opinion Writing（意见写作）", "q": "Choose the best opinion opening.", "options": ["In my opinion, reading is important.", "Reading important maybe.", "I opinion reading.", "Book good."], "answer": "In my opinion, reading is important.", "explain": "In my opinion 用来清楚表达观点。"}, {"id": 32, "module": "7. Opinion Writing（意见写作）", "q": "Choose the best reason sentence.", "options": ["One reason is that reading improves vocabulary.", "Reason reading words.", "Vocabulary reading good.", "One reason improve."], "answer": "One reason is that reading improves vocabulary.", "explain": "One reason is that + 完整句子。"}, {"id": 33, "module": "7. Opinion Writing（意见写作）", "q": "Choose the best addition sentence.", "options": ["Furthermore, reading gives us useful knowledge.", "Furthermore book.", "Reading knowledge furthermore.", "And knowledge maybe."], "answer": "Furthermore, reading gives us useful knowledge.", "explain": "Furthermore 用于补充第二个理由。"}, {"id": 34, "module": "7. Opinion Writing（意见写作）", "q": "Choose the best example sentence.", "options": ["For example, science books help us understand nature.", "For example science.", "Nature book example.", "Science nature maybe."], "answer": "For example, science books help us understand nature.", "explain": "举例句必须具体。"}, {"id": 35, "module": "7. Opinion Writing（意见写作）", "q": "Choose the best conclusion.", "options": ["Therefore, pupils should make reading a daily habit.", "Therefore reading.", "Habit pupils.", "Daily book conclusion."], "answer": "Therefore, pupils should make reading a daily habit.", "explain": "Therefore 表示由前文理由得出的建议。"}, {"id": 36, "module": "8. Connectors & Sentence Order（连接词与排序）", "q": "Choose the correct order.", "options": ["First → Next → After that → Finally", "Finally → First → Next → Because", "However → First → Finally → Although", "Next → Because → First → Finally"], "answer": "First → Next → After that → Finally", "explain": "步骤顺序应从 First 开始，以 Finally 结束。"}, {"id": 37, "module": "8. Connectors & Sentence Order（连接词与排序）", "q": "Choose the connector that shows contrast.", "options": ["However", "Because", "Therefore", "For example"], "answer": "However", "explain": "However 表示转折。"}, {"id": 38, "module": "8. Connectors & Sentence Order（连接词与排序）", "q": "Choose the connector that shows a result.", "options": ["Therefore", "Although", "First", "For example"], "answer": "Therefore", "explain": "Therefore 表示结果。"}, {"id": 39, "module": "8. Connectors & Sentence Order（连接词与排序）", "q": "Choose the connector that gives an example.", "options": ["For example", "However", "Because", "Finally"], "answer": "For example", "explain": "For example 用于举例。"}, {"id": 40, "module": "8. Connectors & Sentence Order（连接词与排序）", "q": "Choose the connector that adds another idea.", "options": ["In addition", "Although", "Because", "In conclusion"], "answer": "In addition", "explain": "In addition 用于补充。"}];
+const TASKS=[{"title": "Email Practice", "task": "Write an email inviting your friend to a school event. Include date, time, place and activities.", "keywords": ["invite", "date", "time", "place", "activities", "reply"], "model": "Hi Adam,\n\nI am writing to invite you to our school Reading Week this Friday at 2 p.m. in the library. We will join a book quiz, listen to stories and make bookmarks. I hope you can come. Please write back soon.\n\nTake care,\nAli"}, {"title": "Guided Writing Practice", "task": "Write about ways to stay healthy. Include exercise, healthy food and enough sleep.", "keywords": ["exercise", "healthy food", "sleep", "because", "therefore"], "model": "There are several ways to stay healthy. First, we should exercise regularly because it keeps our body fit. Next, we should eat healthy food such as vegetables and fruit. We must also get enough sleep. Therefore, everyone should practise healthy habits."}, {"title": "Picture Description Practice", "task": "Describe a busy park. Include people, activities, weather and feelings.", "keywords": ["There are", "playing", "weather", "background", "happy"], "model": "There are many people in the park. Some children are playing badminton while two boys are cycling in the background. The weather is sunny and everyone looks happy. The park is lively and clean."}, {"title": "Story Practice", "task": "Write a story about finding a lost wallet.", "keywords": ["One day", "wallet", "teacher", "honest", "learnt"], "model": "One day, I found a wallet near the school gate. Without hesitation, I handed it to my teacher. Later, the owner collected it and thanked me. I felt proud because I had done the right thing. I learnt that honesty is the best policy."}, {"title": "Opinion Practice", "task": "Explain why reading is important.", "keywords": ["In my opinion", "vocabulary", "knowledge", "for example", "therefore"], "model": "In my opinion, reading is important. One reason is that it improves our vocabulary. Furthermore, books give us useful knowledge. For example, science books help us understand nature. Therefore, pupils should make reading a daily habit."}];
+const MODULES=[...new Set(QUESTIONS.map(q=>q.module))];
+let progress=JSON.parse(localStorage.getItem("uasa14fullProgress")||'{"done":[],"correct":[],"wrong":[],"tasks":[]}');
+
+questionCount.textContent=QUESTIONS.length;
+taskCount.textContent=TASKS.length;
+
+MODULES.forEach(m=>{
+  const o=document.createElement("option");
+  o.value=m;o.textContent=m;
+  moduleFilter.appendChild(o)
+});
+
+function save(){localStorage.setItem("uasa14fullProgress",JSON.stringify(progress))}
+
+function renderQuestions(){
+  const filter=moduleFilter.value;
+  content.innerHTML="";
+  MODULES.forEach(m=>{
+    if(filter&&m!==filter)return;
+    const sec=document.createElement("section");
+    sec.className="module";
+    sec.innerHTML=`<h2>${m}</h2>`;
+    QUESTIONS.filter(q=>q.module===m).forEach(q=>{
+      const number=QUESTIONS.indexOf(q)+1;
+      const card=document.createElement("div");
+      card.className="question";
+      card.innerHTML=`<h3>Q${number}. ${q.q}</h3><div class="choices"></div><div class="explain"></div>`;
+      const choices=card.querySelector(".choices");
+      q.options.forEach((option,index)=>{
+        const b=document.createElement("button");
+        b.className="choice";
+        b.textContent=String.fromCharCode(65+index)+". "+option;
+        b.onclick=()=>answer(q,b,option,card);
+        choices.appendChild(b)
+      });
+      sec.appendChild(card)
+    });
+    content.appendChild(sec)
+  });
+}
+
+function answer(q,btn,value,card){
+  if(card.dataset.answered==="1")return;
+  card.dataset.answered="1";
+  card.querySelectorAll(".choice").forEach(b=>{
+    b.disabled=true;
+    if(b.textContent.slice(3)===q.answer)b.classList.add("correct")
+  });
+  const ok=value===q.answer;
+  if(!ok)btn.classList.add("wrong");
+
+  if(!progress.done.includes(q.id))progress.done.push(q.id);
+  if(ok){
+    if(!progress.correct.includes(q.id))progress.correct.push(q.id);
+    progress.wrong=progress.wrong.filter(id=>id!==q.id)
+  }else{
+    progress.correct=progress.correct.filter(id=>id!==q.id);
+    if(!progress.wrong.includes(q.id))progress.wrong.push(q.id)
+  }
+
+  const ex=card.querySelector(".explain");
+  ex.style.display="block";
+  ex.innerHTML=`<b>${ok?"Correct! 答对了。":"Incorrect. 答错了。"}</b><br>Correct answer: ${q.answer}<br>${q.explain}`;
+  save();
+  renderStats()
+}
+
+function renderWriting(){
+  writingTasks.innerHTML=TASKS.map((t,i)=>`
+    <div class="task">
+      <h3>${t.title}</h3>
+      <p>${t.task}</p>
+      <p><b>Keywords:</b> ${t.keywords.join(", ")}</p>
+      <textarea id="wt${i}" placeholder="Write your answer here..."></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="primary" onclick="checkWriting(${i})">Check Writing</button>
+        <button class="soft hidden" id="mb${i}" onclick="toggleModel(${i})">Show Model</button>
+      </div>
+      <div id="wf${i}" class="feedback">Your feedback will appear here.</div>
+      <div id="wm${i}" class="model hidden">${t.model}</div>
+    </div>
+  `).join("")
+}
+
+function checkWriting(i){
+  const t=TASKS[i];
+  const text=document.getElementById("wt"+i).value.trim();
+  const fb=document.getElementById("wf"+i);
+  if(!text){fb.textContent="Please write your answer first.";return}
+  const words=text.split(/\s+/).filter(Boolean).length;
+  const lower=text.toLowerCase();
+  const hits=t.keywords.filter(k=>lower.includes(k.toLowerCase()));
+  const missing=t.keywords.filter(k=>!lower.includes(k.toLowerCase()));
+  const sentences=(text.match(/[.!?]+/g)||[]).length;
+  const score=Math.min(100,Math.round(
+    20 +
+    Math.min(words,80)/80*30 +
+    hits.length/t.keywords.length*35 +
+    Math.min(sentences,5)/5*15
+  ));
+  if(!progress.tasks.includes(i))progress.tasks.push(i);
+  save();
+  renderStats();
+  document.getElementById("mb"+i).classList.remove("hidden");
+  fb.innerHTML=`<b>Estimated score: ${score}%</b><br>Words: ${words}<br>Sentences: ${sentences}<br>Keywords used: ${hits.join(", ")||"None"}<br>${missing.length?`Missing ideas: ${missing.join(", ")}`:"All key ideas included."}`;
+}
+
+function toggleModel(i){
+  document.getElementById("wm"+i).classList.toggle("hidden")
+}
+
+function renderStats(){
+  const done=progress.done.length;
+  const correct=progress.correct.length;
+  const wrong=progress.wrong.length;
+  const pct=done?Math.round(correct/done*100):0;
+  wrongCount.textContent=wrong;
+  accuracy.textContent=pct+"%";
+  overall.style.width=Math.round((done+progress.tasks.length)/(QUESTIONS.length+TASKS.length)*100)+"%";
+  progressText.textContent=`${done}/${QUESTIONS.length} MCQ completed · ${progress.tasks.length}/${TASKS.length} writing tasks completed · ${correct} correct · ${wrong} wrong`;
+
+  const arr=QUESTIONS.filter(q=>progress.wrong.includes(q.id));
+  wrongList.innerHTML=arr.length
+    ?arr.map(q=>`<div class="wrongitem"><b>${q.module}</b><br>${q.q}<br><small>Answer: ${q.answer}<br>${q.explain}</small></div>`).join("")
+    :"<p>No wrong answers yet.</p>"
+}
+
+function showAll(){
+  moduleFilter.value="";
+  renderQuestions()
+}
+
+function showWrongOnly(){
+  const arr=QUESTIONS.filter(q=>progress.wrong.includes(q.id));
+  content.innerHTML="<section class='module'><h2>Wrong Book Practice</h2></section>";
+  const sec=content.querySelector("section");
+  arr.forEach(q=>{
+    const card=document.createElement("div");
+    card.className="question";
+    card.innerHTML=`<h3>${q.q}</h3><div class="choices"></div><div class="explain"></div>`;
+    const choices=card.querySelector(".choices");
+    q.options.forEach((option,index)=>{
+      const b=document.createElement("button");
+      b.className="choice";
+      b.textContent=String.fromCharCode(65+index)+". "+option;
+      b.onclick=()=>answer(q,b,option,card);
+      choices.appendChild(b)
+    });
+    sec.appendChild(card)
+  });
+}
+
+function scrollToWriting(){
+  document.getElementById("writingSection").scrollIntoView({behavior:"smooth"})
+}
+
+function resetProgress(){
+  progress={done:[],correct:[],wrong:[],tasks:[]};
+  save();
+  renderQuestions();
+  renderWriting();
+  renderStats()
+}
+
+moduleFilter.addEventListener("change",renderQuestions);
+renderQuestions();
+renderWriting();
+renderStats();
+</script>
+</body>
+</html>

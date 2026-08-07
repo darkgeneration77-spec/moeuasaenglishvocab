@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOE UASA English Vocabulary Book 20</title>
+<style>
+:root{--navy:#17355c;--blue:#2563eb;--line:#dbe3ef;--pale:#eef5ff;--green:#087f5b;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#1f2937;font-family:Arial,"Noto Sans SC",sans-serif}
+header{background:linear-gradient(135deg,#102a47,#2563eb);color:#fff;padding:30px 18px}.wrap{max-width:1200px;margin:auto}
+.tag{display:inline-block;padding:6px 11px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff17;font-weight:700}
+h1{font-size:clamp(28px,5vw,48px);margin:12px 0}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:20px}
+.stat{padding:13px;border:1px solid #ffffff35;background:#ffffff18;border-radius:14px}.stat b{display:block;font-size:23px}
+nav{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}.tools{max-width:1200px;margin:auto;padding:11px 18px;display:flex;gap:9px;flex-wrap:wrap}
+button,select,input,textarea{font:inherit}button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.soft{background:#e8eef8;color:var(--navy)}.danger{background:#fde2df;color:#9d1c14}
+select,input,textarea{padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+main{padding:20px 18px 55px}.intro,.box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}.intro{border-left:5px solid var(--blue);line-height:1.6}
+.module{margin-bottom:20px}.module h2{color:var(--navy);border-bottom:2px solid #d9e6ff;padding-bottom:8px}
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.card h3{color:var(--navy);margin-top:0}.example{background:var(--pale);padding:10px;border-radius:9px;margin-top:8px;line-height:1.5}
+.upgrade{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}.basic{background:#fff4f2;padding:10px;border-radius:9px}.advanced{background:#eaf8f1;padding:10px;border-radius:9px}
+.practice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.practice{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px}.practice textarea{width:100%;min-height:180px;resize:vertical}.feedback{margin-top:10px;padding:10px;border-radius:9px;background:#f8fafc;line-height:1.6}
+.progress{height:11px;background:#e5eaf2;border-radius:999px;overflow:hidden}.bar{height:100%;background:var(--blue)}
+.modal{position:fixed;inset:0;background:#0f172acc;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.quiz{background:#fff;width:min(720px,100%);max-height:94vh;overflow:auto;border-radius:18px;padding:20px}.top{display:flex;justify-content:space-between}.prompt{text-align:center;font-size:26px;font-weight:800;color:var(--navy);margin:20px 0}.options{display:grid;gap:9px}.option{text-align:left;background:#eef3fa}.correct{background:#d9f7e9!important}.wrong{background:#fde2df!important}.result{min-height:40px;font-weight:700;margin:12px 0;line-height:1.5}.hidden{display:none!important}.wrongitem{padding:9px 0;border-bottom:1px solid var(--line)}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.tools>*{width:100%}.pattern-grid,.practice-grid{grid-template-columns:1fr}.upgrade{grid-template-columns:1fr}.arrow{text-align:center}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<span class="tag">Book 20 · Writing Upgrade Master</span>
+<h1>MOE UASA Writing Upgrade Master</h1>
+<p>普通句升级 · Email · Guided Writing · Picture Description · Story · Opinion · 自动检查 · 错题本</p>
+<div class="stats">
+<div class="stat"><b id="patternCount"></b><span>Writing Patterns</span></div>
+<div class="stat"><b id="upgradeCount"></b><span>Sentence Upgrades</span></div>
+<div class="stat"><b id="practiceCount"></b><span>Writing Tasks</span></div>
+<div class="stat"><b id="wrongCount">0</b><span>Wrong Book</span></div>
+<div class="stat"><b id="bestScore">0%</b><span>Best Score</span></div>
+</div></div></header>
+
+<nav><div class="tools">
+<button class="primary" onclick="startQuiz()">Sentence Upgrade Quiz</button>
+<button class="primary" onclick="scrollToPractice()">Writing Practice</button>
+<button class="soft" onclick="showModels()">Show All Models</button>
+<button class="soft" onclick="window.print()">Print</button>
+</div></nav>
+
+<main class="wrap">
+<div class="intro"><b>升级原则：</b>不要只把词换得更难。高分写作要做到：句子完整、内容具体、连接自然、时态正确、词汇准确。每篇使用 2–4 个升级句型已经足够。</div>
+
+<div class="box">
+<h2 style="color:var(--navy);margin-top:0">Overall Progress 总进度</h2>
+<div class="progress"><div id="overall" class="bar" style="width:0%"></div></div>
+<p id="progressText">0 writing tasks completed</p>
+</div>
+
+<div id="modules"></div>
+
+<div class="module">
+<h2>7. Sentence Upgrade Bank（普通句升级库）</h2>
+<div id="upgradeBank"></div>
+</div>
+
+<div class="module" id="practiceSection">
+<h2>8. UASA Writing Practice（UASA写作实战）</h2>
+<div id="practiceGrid" class="practice-grid"></div>
+</div>
+
+<div class="box">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+<h2 style="color:var(--navy);margin:0">Wrong Book 错题本</h2>
+<button class="danger" onclick="clearWrong()">Clear</button>
+</div>
+<div id="wrongList"><p>No wrong answers yet.</p></div>
+</div>
+</main>
+
+<div id="modal" class="modal hidden"><div class="quiz">
+<div class="top"><div><b>Sentence Upgrade Quiz</b><div id="counter"></div></div><button class="soft" onclick="closeQuiz()">Close</button></div>
+<div class="progress"><div id="qbar" class="bar"></div></div>
+<div id="prompt" class="prompt"></div>
+<div id="options" class="options"></div>
+<div id="result" class="result"></div>
+<button id="nextBtn" class="primary hidden" onclick="nextQuestion()">Next</button>
+</div></div>
+
+<script>
+const MODULES=[{"title": "1. Email Writing（电邮写作）", "patterns": [["I am writing to tell you about ...", "我写信是想告诉你有关……", "Saya menulis untuk memberitahu anda tentang ...", "I am writing to tell you about my school trip."], ["I am writing to invite you to ...", "我写信邀请你参加……", "Saya menulis untuk menjemput anda ke ...", "I am writing to invite you to my birthday party."], ["I hope you can come.", "希望你能来。", "Saya berharap anda dapat datang.", "I hope you can come."], ["Please write back soon.", "请尽快回信。", "Sila balas dengan segera.", "Please write back soon."], ["I look forward to your reply.", "期待你的回复。", "Saya menantikan balasan anda.", "I look forward to your reply."], ["Take care.", "保重。", "Jaga diri.", "Take care."]]}, {"title": "2. Guided Writing（引导写作）", "patterns": [["First, ...", "首先……", "Pertama, ...", "First, prepare the materials."], ["Next, ...", "接着……", "Seterusnya, ...", "Next, mix the ingredients."], ["After that, ...", "之后……", "Selepas itu, ...", "After that, pour in the water."], ["Finally, ...", "最后……", "Akhirnya, ...", "Finally, clean the table."], ["One reason is that ...", "其中一个原因是……", "Salah satu sebab ialah ...", "One reason is that exercise keeps us healthy."], ["For example, ...", "例如……", "Contohnya, ...", "For example, we can recycle paper."]]}, {"title": "3. Picture Description（看图写作）", "patterns": [["I can see ...", "我可以看到……", "Saya dapat melihat ...", "I can see several pupils in the park."], ["There is / There are ...", "有……", "Terdapat ...", "There are many trees in the background."], ["They are ...ing.", "他们正在……", "Mereka sedang ...", "They are playing badminton."], ["The weather is ...", "天气……", "Cuaca ...", "The weather is sunny."], ["Everyone looks ...", "每个人看起来……", "Semua orang kelihatan ...", "Everyone looks happy."], ["In the background, ...", "在背景中……", "Di bahagian belakang, ...", "In the background, two boys are cycling."]]}, {"title": "4. Story Writing（故事写作）", "patterns": [["One day, ...", "有一天……", "Pada suatu hari, ...", "One day, I found a wallet near the school gate."], ["Suddenly, ...", "突然……", "Tiba-tiba, ...", "Suddenly, it began to rain."], ["Without hesitation, ...", "毫不犹豫地……", "Tanpa berlengah, ...", "Without hesitation, I called for help."], ["Fortunately, ...", "幸运的是……", "Mujurlah, ...", "Fortunately, a teacher arrived."], ["In the end, ...", "最后……", "Pada akhirnya, ...", "In the end, everyone was safe."], ["I learnt that ...", "我学会了……", "Saya belajar bahawa ...", "I learnt that honesty is important."]]}, {"title": "5. Opinion Writing（意见写作）", "patterns": [["In my opinion, ...", "依我看……", "Pada pendapat saya, ...", "In my opinion, reading is important."], ["I strongly believe that ...", "我坚信……", "Saya sangat percaya bahawa ...", "I strongly believe that pupils should exercise."], ["One reason is that ...", "其中一个原因是……", "Salah satu sebab ialah ...", "One reason is that exercise improves health."], ["Furthermore, ...", "此外……", "Tambahan pula, ...", "Furthermore, exercise reduces stress."], ["Therefore, ...", "因此……", "Oleh itu, ...", "Therefore, pupils should exercise regularly."], ["In conclusion, ...", "总而言之……", "Kesimpulannya, ...", "In conclusion, healthy habits are important."]]}, {"title": "6. Feelings & Reflection（感受与反思）", "patterns": [["I felt proud because ...", "我感到自豪，因为……", "Saya berasa bangga kerana ...", "I felt proud because our team won."], ["I was over the moon when ...", "当……时，我非常开心。", "Saya sangat gembira apabila ...", "I was over the moon when I received the prize."], ["It was an unforgettable experience.", "那是一次难忘的经历。", "Itu pengalaman yang tidak dapat dilupakan.", "It was an unforgettable experience."], ["I will never forget that day.", "我永远不会忘记那一天。", "Saya tidak akan melupakan hari itu.", "I will never forget that day."], ["This taught me that ...", "这教会我……", "Hal ini mengajar saya bahawa ...", "This taught me that teamwork is important."], ["I hope to do it again.", "我希望再次参与。", "Saya berharap dapat melakukannya lagi.", "I hope to do it again."]]}];
+const UPGRADES=[["The trip was good.", "The trip was enjoyable and educational.", "good → enjoyable and educational", "旅行很好 → 旅行愉快且有教育意义"], ["I was happy.", "I was over the moon.", "happy → over the moon", "开心 → 非常开心"], ["The place was nice.", "The place was clean, peaceful and beautiful.", "nice → specific adjectives", "漂亮 → 具体形容词"], ["We did many things.", "We took part in several exciting activities.", "did many things → took part in several activities", "做很多事情 → 参加多项活动"], ["I helped my friend.", "Without hesitation, I lent my friend a hand.", "helped → without hesitation + lent a hand", "帮助 → 毫不犹豫地伸出援手"], ["The food was good.", "The food was delicious and freshly prepared.", "good food → delicious and freshly prepared", "食物好吃 → 美味且新鲜准备"], ["We were tired.", "Although we were exhausted, we did not give up.", "tired → exhausted + contrast", "疲倦 → 筋疲力尽但不放弃"], ["The event was fun.", "The event was lively, meaningful and enjoyable.", "fun → lively, meaningful and enjoyable", "好玩 → 热闹、有意义、愉快"], ["I think reading is good.", "In my opinion, reading is beneficial because it improves vocabulary.", "simple opinion → reasoned opinion", "简单意见 → 有原因的意见"], ["We cleaned the park.", "We worked hand in hand to clean the park.", "simple action → teamwork phrase", "普通动作 → 合作表达"], ["The teacher helped us.", "The teacher guided us patiently throughout the activity.", "helped → guided patiently", "帮助 → 耐心指导"], ["I learned many things.", "I gained valuable knowledge and useful skills.", "learned many things → gained knowledge and skills", "学到很多 → 获得知识与技能"], ["It was raining.", "Heavy rain poured down suddenly.", "raining → vivid description", "下雨 → 大雨突然倾盆而下"], ["The boy ran fast.", "The boy sprinted towards the gate.", "ran fast → sprinted", "跑得快 → 冲刺"], ["I was scared.", "I was scared stiff when I heard the loud noise.", "scared → scared stiff + reason", "害怕 → 吓坏了并说明原因"]];
+const PROMPTS=[{"title": "Email: Birthday Invitation", "type": "email", "task": "Write an email to invite your friend to your birthday party. Include the date, place and activities.", "keywords": ["invite", "date", "place", "activities", "reply"], "model": "Hi Adam,\n\nHow are you? I am writing to invite you to my birthday party this Saturday at my house. The party will begin at 3 p.m. We will play games, sing songs and enjoy a delicious cake together. I hope you can come. Please write back soon.\n\nTake care,\nAli"}, {"title": "Guided Writing: Healthy Lifestyle", "type": "guided", "task": "Write about ways to stay healthy. Use: exercise, healthy food, enough sleep.", "keywords": ["exercise", "healthy food", "sleep", "because", "therefore"], "model": "There are several ways to stay healthy. First, we should exercise regularly because it keeps our body fit. Next, we should eat healthy food such as vegetables and fruit. We must also get enough sleep every night. Therefore, these healthy habits should be practised every day."}, {"title": "Picture Description: At the Park", "type": "picture", "task": "Describe a busy park. Include people, activities, weather and feelings.", "keywords": ["There are", "playing", "weather", "background", "happy"], "model": "There are many people in the park. Some children are playing badminton while two boys are cycling in the background. A family is having a picnic under a tree. The weather is sunny and everyone looks happy. The park is lively and clean."}, {"title": "Story: The Lost Wallet", "type": "story", "task": "Write a story about finding a lost wallet.", "keywords": ["One day", "wallet", "honest", "teacher", "learnt"], "model": "One day, I found a wallet near the school gate. It contained some money and an identity card. Without hesitation, I handed it to my teacher. Later, the owner came to collect it and thanked me. I felt proud because I had done the right thing. I learnt that honesty is the best policy."}, {"title": "Opinion: Reading", "type": "opinion", "task": "Explain why reading is important.", "keywords": ["In my opinion", "vocabulary", "knowledge", "for example", "conclusion"], "model": "In my opinion, reading is very important. One reason is that it improves our vocabulary. Furthermore, books give us useful knowledge about the world. For example, science books help us understand nature. In conclusion, pupils should make reading a daily habit."}];
+const QUESTIONS=[{"id": 1, "basic": "The trip was good.", "advanced": "The trip was enjoyable and educational.", "tip": "good → enjoyable and educational", "zh": "旅行很好 → 旅行愉快且有教育意义", "options": ["The trip was enjoyable and educational.", "The trip was good and it was very nice.", "It was okay.", "Nothing happened."], "answer": "The trip was enjoyable and educational."}, {"id": 2, "basic": "I was happy.", "advanced": "I was over the moon.", "tip": "happy → over the moon", "zh": "开心 → 非常开心", "options": ["I was over the moon.", "I was happy and it was very nice.", "It was okay.", "Nothing happened."], "answer": "I was over the moon."}, {"id": 3, "basic": "The place was nice.", "advanced": "The place was clean, peaceful and beautiful.", "tip": "nice → specific adjectives", "zh": "漂亮 → 具体形容词", "options": ["The place was clean, peaceful and beautiful.", "The place was nice and it was very nice.", "It was okay.", "Nothing happened."], "answer": "The place was clean, peaceful and beautiful."}, {"id": 4, "basic": "We did many things.", "advanced": "We took part in several exciting activities.", "tip": "did many things → took part in several activities", "zh": "做很多事情 → 参加多项活动", "options": ["We took part in several exciting activities.", "We did many things and it was very nice.", "It was okay.", "Nothing happened."], "answer": "We took part in several exciting activities."}, {"id": 5, "basic": "I helped my friend.", "advanced": "Without hesitation, I lent my friend a hand.", "tip": "helped → without hesitation + lent a hand", "zh": "帮助 → 毫不犹豫地伸出援手", "options": ["Without hesitation, I lent my friend a hand.", "I helped my friend and it was very nice.", "It was okay.", "Nothing happened."], "answer": "Without hesitation, I lent my friend a hand."}, {"id": 6, "basic": "The food was good.", "advanced": "The food was delicious and freshly prepared.", "tip": "good food → delicious and freshly prepared", "zh": "食物好吃 → 美味且新鲜准备", "options": ["The food was delicious and freshly prepared.", "The food was good and it was very nice.", "It was okay.", "Nothing happened."], "answer": "The food was delicious and freshly prepared."}, {"id": 7, "basic": "We were tired.", "advanced": "Although we were exhausted, we did not give up.", "tip": "tired → exhausted + contrast", "zh": "疲倦 → 筋疲力尽但不放弃", "options": ["Although we were exhausted, we did not give up.", "We were tired and it was very nice.", "It was okay.", "Nothing happened."], "answer": "Although we were exhausted, we did not give up."}, {"id": 8, "basic": "The event was fun.", "advanced": "The event was lively, meaningful and enjoyable.", "tip": "fun → lively, meaningful and enjoyable", "zh": "好玩 → 热闹、有意义、愉快", "options": ["The event was lively, meaningful and enjoyable.", "The event was fun and it was very nice.", "It was okay.", "Nothing happened."], "answer": "The event was lively, meaningful and enjoyable."}, {"id": 9, "basic": "I think reading is good.", "advanced": "In my opinion, reading is beneficial because it improves vocabulary.", "tip": "simple opinion → reasoned opinion", "zh": "简单意见 → 有原因的意见", "options": ["In my opinion, reading is beneficial because it improves vocabulary.", "I think reading is good and it was very nice.", "It was okay.", "Nothing happened."], "answer": "In my opinion, reading is beneficial because it improves vocabulary."}, {"id": 10, "basic": "We cleaned the park.", "advanced": "We worked hand in hand to clean the park.", "tip": "simple action → teamwork phrase", "zh": "普通动作 → 合作表达", "options": ["We worked hand in hand to clean the park.", "We cleaned the park and it was very nice.", "It was okay.", "Nothing happened."], "answer": "We worked hand in hand to clean the park."}, {"id": 11, "basic": "The teacher helped us.", "advanced": "The teacher guided us patiently throughout the activity.", "tip": "helped → guided patiently", "zh": "帮助 → 耐心指导", "options": ["The teacher guided us patiently throughout the activity.", "The teacher helped us and it was very nice.", "It was okay.", "Nothing happened."], "answer": "The teacher guided us patiently throughout the activity."}, {"id": 12, "basic": "I learned many things.", "advanced": "I gained valuable knowledge and useful skills.", "tip": "learned many things → gained knowledge and skills", "zh": "学到很多 → 获得知识与技能", "options": ["I gained valuable knowledge and useful skills.", "I learned many things and it was very nice.", "It was okay.", "Nothing happened."], "answer": "I gained valuable knowledge and useful skills."}, {"id": 13, "basic": "It was raining.", "advanced": "Heavy rain poured down suddenly.", "tip": "raining → vivid description", "zh": "下雨 → 大雨突然倾盆而下", "options": ["Heavy rain poured down suddenly.", "It was raining and it was very nice.", "It was okay.", "Nothing happened."], "answer": "Heavy rain poured down suddenly."}, {"id": 14, "basic": "The boy ran fast.", "advanced": "The boy sprinted towards the gate.", "tip": "ran fast → sprinted", "zh": "跑得快 → 冲刺", "options": ["The boy sprinted towards the gate.", "The boy ran fast and it was very nice.", "It was okay.", "Nothing happened."], "answer": "The boy sprinted towards the gate."}, {"id": 15, "basic": "I was scared.", "advanced": "I was scared stiff when I heard the loud noise.", "tip": "scared → scared stiff + reason", "zh": "害怕 → 吓坏了并说明原因", "options": ["I was scared stiff when I heard the loud noise.", "I was scared and it was very nice.", "It was okay.", "Nothing happened."], "answer": "I was scared stiff when I heard the loud noise."}];
+
+let progress=JSON.parse(localStorage.getItem("uasa20Progress")||'{"tasks":[],"best":0}');
+let wrong=new Set(JSON.parse(localStorage.getItem("uasa20Wrong")||"[]"));
+let quiz=[],qi=0,score=0,current=null,answered=false;
+let englishVoice=null;
+
+patternCount.textContent=MODULES.reduce((n,m)=>n+m.patterns.length,0);
+upgradeCount.textContent=UPGRADES.length;
+practiceCount.textContent=PROMPTS.length;
+
+function loadVoice(){
+ const voices=speechSynthesis.getVoices();
+ englishVoice=voices.find(v=>v.lang==="en-GB"&&/Google|Microsoft|Daniel|Serena/i.test(v.name))||
+ voices.find(v=>v.lang==="en-GB")||voices.find(v=>/^en/i.test(v.lang))||null
+}
+if("speechSynthesis" in window){loadVoice();speechSynthesis.onvoiceschanged=loadVoice}
+function speak(text){
+ if(!("speechSynthesis" in window))return;
+ const clean=String(text).replace(/[／/|]/g,", ").trim();
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(clean);u.lang="en-GB";u.rate=.76;u.volume=1;if(englishVoice)u.voice=englishVoice;
+ speechSynthesis.speak(u)
+}
+function save(){
+ localStorage.setItem("uasa20Progress",JSON.stringify(progress));
+ localStorage.setItem("uasa20Wrong",JSON.stringify([...wrong]))
+}
+function renderModules(){
+ const box=document.getElementById("modules");box.innerHTML="";
+ MODULES.forEach(m=>{
+  const sec=document.createElement("section");sec.className="module";
+  sec.innerHTML=`<h2>${m.title}</h2><div class="pattern-grid"></div>`;
+  const grid=sec.querySelector(".pattern-grid");
+  m.patterns.forEach(p=>{
+   const c=document.createElement("div");c.className="card";
+   c.innerHTML=`<h3>${p[0]}</h3><div><b>华语：</b>${p[1]}</div><div><b>BM：</b>${p[2]}</div><div class="example"><b>Example:</b> ${p[3]}</div><div style="margin-top:10px"><button class="soft">🔊 Pattern</button><button class="soft">🔊 Example</button></div>`;
+   const b=c.querySelectorAll("button");b[0].onclick=()=>speak(p[0]);b[1].onclick=()=>speak(p[3]);grid.appendChild(c)
+  });box.appendChild(sec)
+ })
+}
+function renderUpgrades(){
+ upgradeBank.innerHTML=UPGRADES.map((u,i)=>`<div class="upgrade"><div class="basic"><b>Basic:</b><br>${u[0]}</div><div class="arrow">→</div><div class="advanced"><b>Upgraded:</b><br>${u[1]}<br><small>${u[2]}<br>${u[3]}</small><br><button class="soft" onclick="speak(${JSON.stringify(u[1])})">🔊</button></div></div>`).join("")
+}
+function analyseWriting(i){
+ const text=document.getElementById("text"+i).value.trim();
+ const p=PROMPTS[i],fb=document.getElementById("fb"+i);
+ if(!text){fb.textContent="Please write your answer first.";return}
+ const words=text.split(/\s+/).filter(Boolean).length;
+ const lower=text.toLowerCase();
+ const hit=p.keywords.filter(k=>lower.includes(k.toLowerCase()));
+ const missing=p.keywords.filter(k=>!lower.includes(k.toLowerCase()));
+ const sentenceCount=(text.match(/[.!?]+/g)||[]).length;
+ const hasCapital=/^[A-Z]/.test(text);
+ const score=Math.min(100,
+   20 +
+   Math.min(words,80)/80*30 +
+   Math.min(sentenceCount,5)/5*20 +
+   hit.length/p.keywords.length*25 +
+   (hasCapital?5:0)
+ );
+ if(!progress.tasks.includes(i))progress.tasks.push(i);
+ save();renderProgress();
+ fb.innerHTML=`<b>Estimated score: ${Math.round(score)}%</b><br>Words: ${words}<br>Sentences: ${sentenceCount}<br>Keywords used: ${hit.join(", ")||"None"}<br>${missing.length?`Missing ideas: ${missing.join(", ")}`:"All key ideas included."}<br><br><b>检查：</b>确认时态、拼写、标点和完整句子。`;
+}
+function renderPractice(){
+ practiceGrid.innerHTML=PROMPTS.map((p,i)=>`<div class="practice"><h3>${p.title}</h3><p>${p.task}</p><p><b>Keywords:</b> ${p.keywords.join(", ")}</p><textarea id="text${i}" placeholder="Write your answer here..."></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="primary" onclick="analyseWriting(${i})">Check Writing</button><button class="soft modelBtn hidden" onclick="toggleModel(${i})">Show Model</button></div><div id="model${i}" class="example hidden">${p.model.replace(/\n/g,"<br>")}</div><div id="fb${i}" class="feedback">Your feedback will appear here.</div></div>`).join("")
+}
+function toggleModel(i){document.getElementById("model"+i).classList.toggle("hidden")}
+function showModels(){document.querySelectorAll(".modelBtn").forEach(b=>b.classList.remove("hidden"))}
+function renderProgress(){
+ const pct=Math.round(progress.tasks.length/PROMPTS.length*100);
+ overall.style.width=pct+"%";progressText.textContent=`${progress.tasks.length}/${PROMPTS.length} writing tasks completed (${pct}%)`;
+ bestScore.textContent=(progress.best||0)+"%";
+ const arr=QUESTIONS.filter(q=>wrong.has(q.id));
+ wrongCount.textContent=arr.length;
+ wrongList.innerHTML=arr.length?arr.map(q=>`<div class="wrongitem"><b>Basic:</b> ${q.basic}<br><b>Correct upgrade:</b> ${q.answer}<br><small>${q.tip}</small></div>`).join(""):"<p>No wrong answers yet.</p>"
+}
+renderModules();renderUpgrades();renderPractice();renderProgress();
+
+function startQuiz(){
+ quiz=[...QUESTIONS].sort(()=>Math.random()-.5);qi=0;score=0;modal.classList.remove("hidden");showQuestion()
+}
+function showQuestion(){
+ answered=false;current=quiz[qi];counter.textContent=`Question ${qi+1} / ${quiz.length}`;qbar.style.width=(qi/quiz.length*100)+"%";prompt.textContent=current.basic;result.textContent="";nextBtn.classList.add("hidden");options.innerHTML="";
+ [...current.options].sort(()=>Math.random()-.5).forEach(ch=>{
+  const b=document.createElement("button");b.className="option";b.textContent=ch;b.onclick=()=>grade(b,ch);options.appendChild(b)
+ })
+}
+function grade(btn,val){
+ if(answered)return;answered=true;
+ const ok=val===current.answer;
+ document.querySelectorAll(".option").forEach(b=>{b.disabled=true;if(b.textContent===current.answer)b.classList.add("correct")});
+ if(!ok)btn.classList.add("wrong");
+ if(ok){score++;wrong.delete(current.id)}else{wrong.add(current.id)}
+ save();renderProgress();
+ result.innerHTML=(ok?"Correct! 答对了。<br>":"Incorrect. 答错了。<br>")+current.tip+"<br>"+current.zh;
+ nextBtn.classList.remove("hidden")
+}
+function nextQuestion(){
+ qi++;
+ if(qi<quiz.length){showQuestion();return}
+ const pct=Math.round(score/quiz.length*100);
+ progress.best=Math.max(progress.best||0,pct);save();renderProgress();
+ qbar.style.width="100%";prompt.textContent=`${score} / ${quiz.length} (${pct}%)`;options.innerHTML="";
+ result.textContent=pct>=80?"Excellent! You can upgrade basic sentences effectively.":"Review the upgrade bank and correct the wrong answers.";
+ nextBtn.classList.add("hidden")
+}
+function clearWrong(){wrong.clear();save();renderProgress()}
+function closeQuiz(){speechSynthesis.cancel();modal.classList.add("hidden")}
+function scrollToPractice(){document.getElementById("practiceSection").scrollIntoView({behavior:"smooth"})}
+</script>
+</body></html>

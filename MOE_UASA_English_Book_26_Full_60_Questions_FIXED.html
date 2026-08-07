@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOE UASA English Book 26 - Full Practice</title>
+<style>
+:root{--navy:#17355c;--blue:#2563eb;--line:#dbe3ef;--pale:#eef5ff}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;color:#1f2937;font-family:Arial,"Noto Sans SC",sans-serif}
+header{background:linear-gradient(135deg,#102a47,#2563eb);color:#fff;padding:30px 18px}
+.wrap{max-width:1180px;margin:auto}
+.tag{display:inline-block;padding:6px 11px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff17;font-weight:700}
+h1{font-size:clamp(28px,5vw,48px);margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:20px}
+.stat{padding:13px;border:1px solid #ffffff35;background:#ffffff18;border-radius:14px}
+.stat b{display:block;font-size:23px}
+nav{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}
+.tools{max-width:1180px;margin:auto;padding:11px 18px;display:flex;gap:9px;flex-wrap:wrap}
+button,select{font:inherit}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}
+.primary{background:var(--blue);color:#fff}
+.soft{background:#e8eef8;color:var(--navy)}
+.danger{background:#fde2df;color:#9d1c14}
+select{padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+main{padding:20px 18px 55px}
+.intro,.box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+.intro{border-left:5px solid var(--blue);line-height:1.6}
+.module{margin:20px 0}
+.module h2{color:var(--navy);border-bottom:2px solid #d9e6ff;padding-bottom:8px}
+.question{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0}
+.question h3{margin-top:0;line-height:1.5}
+.choices{display:grid;gap:8px;margin-top:10px}
+.choice{background:#eef3fa;text-align:left}
+.choice.correct{background:#d9f7e9}
+.choice.wrong{background:#fde2df}
+.explain{display:none;margin-top:10px;padding:10px;background:#f8fafc;border-radius:9px;line-height:1.55}
+.progress{height:11px;background:#e5eaf2;border-radius:999px;overflow:hidden}
+.bar{height:100%;background:var(--blue)}
+.wrongitem{padding:9px 0;border-bottom:1px solid var(--line)}
+.hidden{display:none!important}
+@media(max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .tools>*{width:100%}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+<span class="tag">Book 26 · Full Practice Version</span>
+<h1>MOE UASA Final Booster</h1>
+<p>6 Modules · 60 Actual Questions · A–D Options · Explanations · Wrong Book</p>
+<div class="stats">
+<div class="stat"><b>6</b>Modules</div>
+<div class="stat"><b id="questionCount"></b>Questions</div>
+<div class="stat"><b id="doneCount">0</b>Completed</div>
+<div class="stat"><b id="wrongCount">0</b>Wrong Book</div>
+<div class="stat"><b id="accuracy">0%</b>Accuracy</div>
+</div></div></header>
+
+<nav><div class="tools">
+<select id="categoryFilter"><option value="">All Modules</option></select>
+<button class="primary" onclick="showAll()">Show All Questions</button>
+<button class="soft" onclick="showWrongOnly()">Wrong Book Only</button>
+<button class="danger" onclick="resetProgress()">Reset Progress</button>
+</div></nav>
+
+<main class="wrap">
+<div class="intro">
+<b>修正版：</b>所有60道题目现在直接显示在页面内，每题都有完整题目和 A、B、C、D 四个选项。学生点击答案后才显示正确答案和华语解释。
+</div>
+
+<div class="box">
+<h2 style="color:var(--navy);margin-top:0">Overall Progress</h2>
+<div class="progress"><div id="overall" class="bar"></div></div>
+<p id="progressText"></p>
+</div>
+
+<div id="content"></div>
+
+<div class="box">
+<h2 style="color:var(--navy)">Wrong Book 错题本</h2>
+<div id="wrongList"></div>
+</div>
+</main>
+
+<script>
+const QUESTIONS=[{"id": 1, "category": "1. Vocabulary Repair（词汇补强）", "q": "Choose the best word: The soup is very _____.", "options": ["delicious", "carefully", "honesty", "quickly"], "answer": "delicious", "explain": "soup 是名词，需要形容词 delicious。"}, {"id": 2, "category": "1. Vocabulary Repair（词汇补强）", "q": "Choose the correct word: Please _____ the question carefully.", "options": ["read", "reads", "reading", "reader"], "answer": "read", "explain": "Please 后接动词原形。"}, {"id": 3, "category": "1. Vocabulary Repair（词汇补强）", "q": "Which word means “乐于助人的”?", "options": ["helpful", "careless", "dangerous", "crowded"], "answer": "helpful", "explain": "helpful = 乐于助人的。"}, {"id": 4, "category": "1. Vocabulary Repair（词汇补强）", "q": "Choose the correct collocation.", "options": ["make a decision", "do a decision", "take a decisioning", "give decision"], "answer": "make a decision", "explain": "固定搭配：make a decision。"}, {"id": 5, "category": "1. Vocabulary Repair（词汇补强）", "q": "Choose the correct spelling.", "options": ["necessary", "neccessary", "necesary", "necessery"], "answer": "necessary", "explain": "正确拼写是 necessary。"}, {"id": 6, "category": "1. Vocabulary Repair（词汇补强）", "q": "Which word is closest in meaning to “happy”?", "options": ["glad", "angry", "weak", "quiet"], "answer": "glad", "explain": "glad 与 happy 意思相近。"}, {"id": 7, "category": "1. Vocabulary Repair（词汇补强）", "q": "Which word is the opposite of “safe”?", "options": ["dangerous", "helpful", "careful", "healthy"], "answer": "dangerous", "explain": "safe 的反义词是 dangerous。"}, {"id": 8, "category": "1. Vocabulary Repair（词汇补强）", "q": "Choose the correct phrase.", "options": ["pay attention", "make attention", "do attention", "take attention"], "answer": "pay attention", "explain": "固定搭配：pay attention。"}, {"id": 9, "category": "1. Vocabulary Repair（词汇补强）", "q": "“Borrow” means _____.", "options": ["take something temporarily", "give something temporarily", "sell something", "break something"], "answer": "take something temporarily", "explain": "borrow = 借入。"}, {"id": 10, "category": "1. Vocabulary Repair（词汇补强）", "q": "“Lend” means _____.", "options": ["give something temporarily", "take something temporarily", "lose something", "buy something"], "answer": "give something temporarily", "explain": "lend = 借出。"}, {"id": 11, "category": "2. Grammar Repair（语法补强）", "q": "Every day, Siti _____ to school by bus.", "options": ["goes", "go", "went", "going"], "answer": "goes", "explain": "Every day 表习惯，第三人称单数用 goes。"}, {"id": 12, "category": "2. Grammar Repair（语法补强）", "q": "Yesterday, we _____ the museum.", "options": ["visited", "visit", "visiting", "visits"], "answer": "visited", "explain": "Yesterday 表过去，使用 visited。"}, {"id": 13, "category": "2. Grammar Repair（语法补强）", "q": "Look! The boys _____ football.", "options": ["are playing", "play", "played", "will play"], "answer": "are playing", "explain": "Look 表示正在进行。"}, {"id": 14, "category": "2. Grammar Repair（语法补强）", "q": "She has already _____ her work.", "options": ["finished", "finish", "finishing", "finishes"], "answer": "finished", "explain": "has + past participle。"}, {"id": 15, "category": "2. Grammar Repair（语法补强）", "q": "I saw _____ elephant.", "options": ["an", "a", "the", "some"], "answer": "an", "explain": "elephant 以元音音素开头。"}, {"id": 16, "category": "2. Grammar Repair（语法补强）", "q": "She bought _____ useful book.", "options": ["a", "an", "the", "some"], "answer": "a", "explain": "useful 开头发 /j/ 音。"}, {"id": 17, "category": "2. Grammar Repair（语法补强）", "q": "Ali is _____ than Ben.", "options": ["taller", "tall", "tallest", "more tall"], "answer": "taller", "explain": "than 前使用比较级。"}, {"id": 18, "category": "2. Grammar Repair（语法补强）", "q": "This is the _____ building in town.", "options": ["highest", "higher", "high", "more high"], "answer": "highest", "explain": "the + 最高级。"}, {"id": 19, "category": "2. Grammar Repair（语法补强）", "q": "The pupils completed the task _____.", "options": ["successfully", "successful", "success", "succeed"], "answer": "successfully", "explain": "修饰 completed 用副词。"}, {"id": 20, "category": "2. Grammar Repair（语法补强）", "q": "Although it rained, _____ continued the game.", "options": ["we", "but we", "because we", "so we"], "answer": "we", "explain": "Although 句型中不要再加 but。"}, {"id": 21, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "The books are _____ the bag.", "options": ["in", "on", "at", "between"], "answer": "in", "explain": "在袋子里面用 in。"}, {"id": 22, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "The class starts _____ 8 a.m.", "options": ["at", "on", "in", "for"], "answer": "at", "explain": "具体时间用 at。"}, {"id": 23, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "We have English _____ Monday.", "options": ["on", "in", "at", "by"], "answer": "on", "explain": "星期用 on。"}, {"id": 24, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "My birthday is _____ May.", "options": ["in", "on", "at", "through"], "answer": "in", "explain": "月份用 in。"}, {"id": 25, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "The train went _____ the tunnel.", "options": ["through", "across", "on", "between"], "answer": "through", "explain": "穿过内部空间用 through。"}, {"id": 26, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "I stayed home _____ I was ill.", "options": ["because", "although", "however", "therefore"], "answer": "because", "explain": "后面说明原因。"}, {"id": 27, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "It was raining, _____ we stayed indoors.", "options": ["so", "but", "although", "because"], "answer": "so", "explain": "后面是结果。"}, {"id": 28, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "_____ it was raining, we continued.", "options": ["Although", "Because", "Therefore", "For example"], "answer": "Although", "explain": "前后形成转折。"}, {"id": 29, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "We can recycle paper. _____, we can reuse bottles.", "options": ["In addition", "Although", "Because", "Finally"], "answer": "In addition", "explain": "补充另一个做法。"}, {"id": 30, "category": "3. Preposition & Connector Repair（介词与连接词）", "q": "_____, exercise is important.", "options": ["In conclusion", "Because", "Although", "Next"], "answer": "In conclusion", "explain": "总结句使用 In conclusion。"}, {"id": 31, "category": "4. Cloze Repair（短文填空补强）", "q": "To stay healthy, we should eat _____ food.", "options": ["healthy", "health", "healthily", "unhealthy"], "answer": "healthy", "explain": "修饰 food 用形容词 healthy。"}, {"id": 32, "category": "4. Cloze Repair（短文填空补强）", "q": "Our school organised a campaign _____ reduce waste.", "options": ["to", "for", "because", "although"], "answer": "to", "explain": "to + verb 表目的。"}, {"id": 33, "category": "4. Cloze Repair（短文填空补强）", "q": "The pupils were excited _____ the trip.", "options": ["about", "of", "at", "on"], "answer": "about", "explain": "固定搭配 excited about。"}, {"id": 34, "category": "4. Cloze Repair（短文填空补强）", "q": "The volunteers talked _____ the residents.", "options": ["to", "at", "on", "for"], "answer": "to", "explain": "固定搭配 talk to。"}, {"id": 35, "category": "4. Cloze Repair（短文填空补强）", "q": "The programme was very _____.", "options": ["successful", "success", "successfully", "succeed"], "answer": "successful", "explain": "be 动词后用形容词。"}, {"id": 36, "category": "4. Cloze Repair（短文填空补强）", "q": "She crossed the road _____.", "options": ["carefully", "careful", "care", "careless"], "answer": "carefully", "explain": "修饰 crossed 用副词。"}, {"id": 37, "category": "4. Cloze Repair（短文填空补强）", "q": "The school became much _____.", "options": ["cleaner", "cleanest", "clean", "more clean"], "answer": "cleaner", "explain": "much 可加强比较级。"}, {"id": 38, "category": "4. Cloze Repair（短文填空补强）", "q": "The teacher reminded us _____ run.", "options": ["not to", "to not", "not", "do not"], "answer": "not to", "explain": "remind someone not to do something。"}, {"id": 39, "category": "4. Cloze Repair（短文填空补强）", "q": "We were proud _____ our team.", "options": ["of", "at", "in", "for"], "answer": "of", "explain": "固定搭配 proud of。"}, {"id": 40, "category": "4. Cloze Repair（短文填空补强）", "q": "He asked the teacher _____ help.", "options": ["for", "to", "at", "with"], "answer": "for", "explain": "ask someone for help。"}, {"id": 41, "category": "5. Reading Repair（阅读理解补强）", "q": "NOTICE: The library closes at 2 p.m. on Friday for stock checking. Why does it close early?", "options": ["For stock checking", "For cleaning", "For a holiday", "For repairs"], "answer": "For stock checking", "explain": "通知直接说明原因。"}, {"id": 42, "category": "5. Reading Repair（阅读理解补强）", "q": "EMAIL: The party is on Saturday at 3 p.m. What time is the party?", "options": ["Saturday at 3 p.m.", "Sunday at 3 p.m.", "Saturday at 5 p.m.", "Friday at 3 p.m."], "answer": "Saturday at 3 p.m.", "explain": "题目考日期和时间定位。"}, {"id": 43, "category": "5. Reading Repair（阅读理解补强）", "q": "POSTER: Bring paper, bottles and cans. What should pupils bring?", "options": ["Recyclable items", "Food", "Toys", "Uniforms"], "answer": "Recyclable items", "explain": "列出的物品都是可回收物。"}, {"id": 44, "category": "5. Reading Repair（阅读理解补强）", "q": "STORY: Amir helped an old woman carry groceries. What quality does Amir show?", "options": ["Helpful", "Lazy", "Rude", "Dishonest"], "answer": "Helpful", "explain": "帮助别人说明 helpful。"}, {"id": 45, "category": "5. Reading Repair（阅读理解补强）", "q": "ARTICLE: Water is precious. What does “precious” mean?", "options": ["valuable", "dirty", "free", "dangerous"], "answer": "valuable", "explain": "上下文说明水很重要，因此 precious = valuable。"}, {"id": 46, "category": "5. Reading Repair（阅读理解补强）", "q": "MESSAGE: Log in five minutes early. When should pupils log in?", "options": ["Five minutes early", "Ten minutes late", "Exactly at noon", "The night before"], "answer": "Five minutes early", "explain": "直接信息题。"}, {"id": 47, "category": "5. Reading Repair（阅读理解补强）", "q": "TIMETABLE: The bus leaves at 11.30 a.m. What time does it leave?", "options": ["11.30 a.m.", "9.00 a.m.", "2.00 p.m.", "4.30 p.m."], "answer": "11.30 a.m.", "explain": "读取时间表。"}, {"id": 48, "category": "5. Reading Repair（阅读理解补强）", "q": "ADVERTISEMENT: Spend above RM50 to get a free bag. How can you get the bag?", "options": ["Spend above RM50", "Buy one book", "Use cash only", "Visit on Monday"], "answer": "Spend above RM50", "explain": "条件信息题。"}, {"id": 49, "category": "5. Reading Repair（阅读理解补强）", "q": "STORY: Although it rained, the children still played indoors. What is the main idea?", "options": ["They still had fun despite the rain.", "They hated indoor games.", "The school closed.", "The rain stopped immediately."], "answer": "They still had fun despite the rain.", "explain": "主旨是计划改变但仍然玩得开心。"}, {"id": 50, "category": "5. Reading Repair（阅读理解补强）", "q": "REPORT: The event may be held monthly. What may happen next?", "options": ["It may be held monthly", "It will be cancelled", "No one will join", "The venue will close"], "answer": "It may be held monthly", "explain": "推断未来安排。"}, {"id": 51, "category": "6. Writing Repair（写作补强）", "q": "Choose the best opening for an email invitation.", "options": ["I am writing to invite you to my party.", "Party good. Come.", "You come now.", "I birthday."], "answer": "I am writing to invite you to my party.", "explain": "完整、有礼貌并说明写信目的。"}, {"id": 52, "category": "6. Writing Repair（写作补强）", "q": "Choose the best connector for a sequence.", "options": ["First", "However", "Because", "Although"], "answer": "First", "explain": "First 用于第一步骤。"}, {"id": 53, "category": "6. Writing Repair（写作补强）", "q": "Choose the best story starter.", "options": ["One day, I found a wallet near the gate.", "Wallet there.", "I wallet.", "Good wallet."], "answer": "One day, I found a wallet near the gate.", "explain": "故事开头要交代时间与事件。"}, {"id": 54, "category": "6. Writing Repair（写作补强）", "q": "Choose the best opinion sentence.", "options": ["In my opinion, reading is important.", "Reading yes.", "Book good.", "I read maybe."], "answer": "In my opinion, reading is important.", "explain": "完整表达观点。"}, {"id": 55, "category": "6. Writing Repair（写作补强）", "q": "Choose the best conclusion.", "options": ["In conclusion, we should keep our school clean.", "Clean school.", "Finish.", "That all."], "answer": "In conclusion, we should keep our school clean.", "explain": "总结句完整并重申主题。"}, {"id": 56, "category": "6. Writing Repair（写作补强）", "q": "Choose the better sentence.", "options": ["The trip was enjoyable and educational.", "The trip was good.", "Trip nice.", "I go trip."], "answer": "The trip was enjoyable and educational.", "explain": "具体词汇比 good 更有内容。"}, {"id": 57, "category": "6. Writing Repair（写作补强）", "q": "Choose the better feeling sentence.", "options": ["I was over the moon when I won.", "I happy.", "I good.", "Winning okay."], "answer": "I was over the moon when I won.", "explain": "使用更自然的情感表达。"}, {"id": 58, "category": "6. Writing Repair（写作补强）", "q": "Choose the best teamwork sentence.", "options": ["We worked hand in hand to clean the park.", "We clean.", "Park clean us.", "We did thing."], "answer": "We worked hand in hand to clean the park.", "explain": "句子完整并有高分表达。"}, {"id": 59, "category": "6. Writing Repair（写作补强）", "q": "Choose the best moral sentence.", "options": ["I learnt that honesty is the best policy.", "Honesty.", "I learn good.", "Wallet good."], "answer": "I learnt that honesty is the best policy.", "explain": "故事结尾可加入道德价值。"}, {"id": 60, "category": "6. Writing Repair（写作补强）", "q": "Choose the best closing for an email.", "options": ["Please write back soon.", "Okay bye.", "Finish.", "No more."], "answer": "Please write back soon.", "explain": "礼貌且符合电邮格式。"}];
+const CATEGORIES=[...new Set(QUESTIONS.map(q=>q.category))];
+let progress=JSON.parse(localStorage.getItem("uasa26fullProgress")||'{"done":[],"correct":[],"wrong":[]}');
+
+questionCount.textContent=QUESTIONS.length;
+CATEGORIES.forEach(c=>{
+  const o=document.createElement("option");
+  o.value=c;o.textContent=c;
+  categoryFilter.appendChild(o)
+});
+
+function save(){localStorage.setItem("uasa26fullProgress",JSON.stringify(progress))}
+
+function render(){
+  const filter=categoryFilter.value;
+  content.innerHTML="";
+  CATEGORIES.forEach(c=>{
+    if(filter&&c!==filter)return;
+    const sec=document.createElement("section");
+    sec.className="module";
+    sec.innerHTML=`<h2>${c}</h2>`;
+    QUESTIONS.filter(q=>q.category===c).forEach(q=>{
+      const number=QUESTIONS.indexOf(q)+1;
+      const card=document.createElement("div");
+      card.className="question";
+      card.innerHTML=`<h3>Q${number}. ${q.q}</h3><div class="choices"></div><div class="explain"></div>`;
+      const choices=card.querySelector(".choices");
+      q.options.forEach((option,index)=>{
+        const b=document.createElement("button");
+        b.className="choice";
+        b.textContent=String.fromCharCode(65+index)+". "+option;
+        b.onclick=()=>answer(q,b,option,card);
+        choices.appendChild(b)
+      });
+      sec.appendChild(card)
+    });
+    content.appendChild(sec)
+  });
+  renderStats()
+}
+
+function answer(q,btn,value,card){
+  if(card.dataset.answered==="1")return;
+  card.dataset.answered="1";
+  const buttons=card.querySelectorAll(".choice");
+  buttons.forEach(b=>{
+    b.disabled=true;
+    if(b.textContent.slice(3)===q.answer)b.classList.add("correct")
+  });
+  const ok=value===q.answer;
+  if(!ok)btn.classList.add("wrong");
+
+  if(!progress.done.includes(q.id))progress.done.push(q.id);
+  if(ok){
+    if(!progress.correct.includes(q.id))progress.correct.push(q.id);
+    progress.wrong=progress.wrong.filter(id=>id!==q.id)
+  }else{
+    progress.correct=progress.correct.filter(id=>id!==q.id);
+    if(!progress.wrong.includes(q.id))progress.wrong.push(q.id)
+  }
+
+  const explain=card.querySelector(".explain");
+  explain.style.display="block";
+  explain.innerHTML=`<b>${ok?"Correct! 答对了。":"Incorrect. 答错了。"}</b><br>Correct answer: ${q.answer}<br>${q.explain}`;
+  save();
+  renderStats()
+}
+
+function renderStats(){
+  const done=progress.done.length;
+  const correct=progress.correct.length;
+  const wrong=progress.wrong.length;
+  const pct=done?Math.round(correct/done*100):0;
+  doneCount.textContent=done;
+  wrongCount.textContent=wrong;
+  accuracy.textContent=pct+"%";
+  overall.style.width=Math.round(done/QUESTIONS.length*100)+"%";
+  progressText.textContent=`${done}/${QUESTIONS.length} completed · ${correct} correct · ${wrong} wrong`;
+
+  const arr=QUESTIONS.filter(q=>progress.wrong.includes(q.id));
+  wrongList.innerHTML=arr.length
+    ?arr.map(q=>`<div class="wrongitem"><b>${q.category}</b><br>${q.q}<br><small>Answer: ${q.answer}<br>${q.explain}</small></div>`).join("")
+    :"<p>No wrong answers yet.</p>"
+}
+
+function showAll(){
+  categoryFilter.value="";
+  render()
+}
+
+function showWrongOnly(){
+  const arr=QUESTIONS.filter(q=>progress.wrong.includes(q.id));
+  content.innerHTML="<section class='module'><h2>Wrong Book Practice</h2></section>";
+  const sec=content.querySelector("section");
+  arr.forEach(q=>{
+    const card=document.createElement("div");
+    card.className="question";
+    card.innerHTML=`<h3>${q.q}</h3><div class="choices"></div><div class="explain"></div>`;
+    const choices=card.querySelector(".choices");
+    q.options.forEach((option,index)=>{
+      const b=document.createElement("button");
+      b.className="choice";
+      b.textContent=String.fromCharCode(65+index)+". "+option;
+      b.onclick=()=>answer(q,b,option,card);
+      choices.appendChild(b)
+    });
+    sec.appendChild(card)
+  });
+}
+
+function resetProgress(){
+  progress={done:[],correct:[],wrong:[]};
+  save();
+  render()
+}
+
+categoryFilter.addEventListener("change",render);
+render();
+</script>
+</body>
+</html>

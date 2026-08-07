@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOE UASA English Vocabulary Book 11</title>
+<style>
+:root{--navy:#17355c;--blue:#2563eb;--pale:#eef5ff;--ink:#1f2937;--line:#dbe3ef}
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:var(--ink);font-family:Arial,"Noto Sans SC",sans-serif}
+header{background:linear-gradient(135deg,#102a47,#2563eb);color:#fff;padding:30px 18px}.wrap{max-width:1200px;margin:auto}
+.tag{display:inline-block;padding:6px 11px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff17;font-weight:700}
+h1{font-size:clamp(28px,5vw,48px);margin:12px 0 6px}.subtitle{margin:0;line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}.stat{padding:13px;border:1px solid #ffffff35;background:#ffffff18;border-radius:14px}.stat b{display:block;font-size:23px}
+nav{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line)}.tools{max-width:1200px;margin:auto;padding:11px 18px;display:flex;gap:9px;flex-wrap:wrap}
+input,select,button{font:inherit}.search,select{padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}.search{flex:1;min-width:220px}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.soft{background:#e8eef8;color:var(--navy)}
+main{padding:20px 18px 55px}.intro{background:#fff;border-left:5px solid var(--blue);padding:14px 16px;border-radius:11px;margin-bottom:16px;line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;position:relative;box-shadow:0 5px 16px #0f172a0a}
+.card h2{font-size:23px;margin:3px 42px 8px 0;color:var(--navy)}.rule{background:#f7f9fc;border:1px solid var(--line);padding:10px;border-radius:10px;line-height:1.55}
+.tip{margin-top:9px;background:#fff6d8;padding:9px;border-radius:9px;font-weight:700}.item{margin-top:11px;padding:10px;background:var(--pale);border-radius:10px;line-height:1.5}.word{font-size:20px;font-weight:800;color:var(--blue)}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.speak{background:#e8f0ff;color:#174ea6}.star{position:absolute;right:12px;top:12px;padding:8px 10px;background:#edf1f6}.star.on{background:#fff1bc;color:#805600}
+.hidden{display:none!important}.empty{text-align:center;padding:50px;color:#64748b}
+.modal{position:fixed;inset:0;background:#0f172abb;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}.panel{background:#fff;width:min(650px,100%);max-height:92vh;overflow:auto;border-radius:18px;padding:21px}
+.top{display:flex;justify-content:space-between;gap:10px}.progress{height:10px;background:#e5eaf2;border-radius:999px;overflow:hidden;margin:13px 0}.bar{height:100%;background:var(--blue);width:0}
+.prompt{text-align:center;font-size:28px;font-weight:800;color:var(--navy);margin:24px 0 8px}.instruction{text-align:center;color:#64748b;margin-bottom:17px}.sentence{background:#f7f9fc;border:1px solid var(--line);padding:15px;border-radius:11px;margin-bottom:15px;font-size:18px}
+.options{display:grid;gap:9px}.option{text-align:left;background:#eef3fa;padding:14px}.option.correct{background:#d9f7e9;color:#086545}.option.wrong{background:#fde2df;color:#9d1c14}.result{min-height:30px;font-weight:700;margin:13px 0}
+footer{text-align:center;padding:25px;color:#667085;font-size:13px}
+@media(max-width:650px){.stats{grid-template-columns:repeat(2,1fr)}.tools>*{width:100%}.grid{grid-template-columns:1fr}}
+</style></head><body>
+<header><div class="wrap">
+<span class="tag">Book 11 · Confusing Words Advanced</span>
+<h1>MOE UASA Confusing Words Advanced</h1>
+<p class="subtitle">高级易混词辨析 · English + 华语 + Bahasa Melayu · Rules · Tips · Examples · Quiz</p>
+<div class="stats"><div class="stat"><b id="groupCount"></b><span>Word Groups</span></div><div class="stat"><b id="wordCount"></b><span>Words & Phrases</span></div><div class="stat"><b id="saved">0</b><span>Saved</span></div><div class="stat"><b id="best">0%</b><span>Best Score</span></div></div>
+</div></header>
+
+<nav><div class="tools">
+<input id="search" class="search" placeholder="Search English / 华语 / BM / rule…">
+<select id="view"><option value="all">All Groups 全部</option><option value="saved">Saved Only 收藏</option></select>
+<button class="primary" onclick="startQuiz()">Start Quiz 开始测验</button>
+<button class="soft" onclick="window.print()">Print 打印</button>
+</div></nav>
+
+<main class="wrap">
+<div class="intro"><b>学习方法：</b>先看差别，再记口诀，最后根据完整句子判断。Book 11 重点补充较高级、较容易失分的 UASA 易混词。<br><b>发音：</b>只朗读英文词和英文例句，优先采用标准英式英语语音，不会朗读 slash。</div>
+<div id="grid" class="grid"></div><div id="empty" class="empty hidden">No matching word group found.</div>
+</main>
+
+<div id="modal" class="modal hidden"><div class="panel">
+<div class="top"><div><b>Confusing Words Quiz</b><div id="counter"></div></div><button class="soft" onclick="closeQuiz()">Close</button></div>
+<div class="progress"><div id="bar" class="bar"></div></div>
+<div id="prompt" class="prompt"></div><div id="instruction" class="instruction">Choose the best word or phrase.</div><div id="sentence" class="sentence"></div>
+<div id="options" class="options"></div><div id="result" class="result"></div>
+<button id="next" class="primary hidden" onclick="nextQuestion()">Next Question</button>
+</div></div>
+
+<footer>Book 11 Confusing Words Advanced · Malaysian primary UASA English revision</footer>
+<script>
+const GROUPS=[{"title": "arrive / reach / get to", "zh": "到达", "ms": "tiba / sampai", "rule": "arrive 后接地点通常要用 at/in；reach 直接接地点；get to 口语常用。", "tip": "arrive at/in；reach + place；get to + place。", "items": [{"word": "arrive", "use": "到达，需配 at/in", "example": "We arrived at the station early."}, {"word": "reach", "use": "直接到达某地", "example": "We reached the hotel at noon."}, {"word": "get to", "use": "较口语的“到达”", "example": "What time did you get to school?"}]}, {"title": "miss / lose", "zh": "错过 / 遗失", "ms": "terlepas / kehilangan", "rule": "miss 表示错过机会、交通或想念；lose 表示遗失或输掉。", "tip": "miss the bus；lose a key。", "items": [{"word": "miss", "use": "错过或想念", "example": "I missed the bus this morning."}, {"word": "lose", "use": "遗失或输掉", "example": "Do not lose your wallet."}]}, {"title": "answer / reply", "zh": "回答 / 回复", "ms": "menjawab / membalas", "rule": "answer 可直接接 question、phone；reply 常搭配 to。", "tip": "answer a question；reply to an email。", "items": [{"word": "answer", "use": "回答问题或接听", "example": "Please answer the question."}, {"word": "reply", "use": "回复信件或信息", "example": "She replied to my email."}]}, {"title": "voice / sound / noise", "zh": "声音", "ms": "suara / bunyi / bising", "rule": "voice 指人的嗓音；sound 泛指声音；noise 通常指不悦耳的噪音。", "tip": "human voice；any sound；unpleasant noise。", "items": [{"word": "voice", "use": "人的嗓音", "example": "She has a soft voice."}, {"word": "sound", "use": "任何声音", "example": "I heard a strange sound."}, {"word": "noise", "use": "令人不舒服的噪音", "example": "The noise from the road was loud."}]}, {"title": "floor / ground", "zh": "地板 / 地面", "ms": "lantai / tanah", "rule": "floor 指建筑物内部地板；ground 指户外地面。", "tip": "inside floor；outside ground。", "items": [{"word": "floor", "use": "室内地板", "example": "The books are on the floor."}, {"word": "ground", "use": "户外地面", "example": "The ball fell to the ground."}]}, {"title": "tall / high", "zh": "高", "ms": "tinggi", "rule": "tall 常形容人或直立物；high 指位置、程度或高度。", "tip": "tall person；high mountain。", "items": [{"word": "tall", "use": "人或直立物很高", "example": "The boy is tall."}, {"word": "high", "use": "位置或高度高", "example": "The kite flew high."}]}, {"title": "alone / lonely", "zh": "独自 / 孤单", "ms": "bersendirian / kesunyian", "rule": "alone 是客观上独自一人；lonely 是主观感到孤单。", "tip": "alone = one person；lonely = sad feeling。", "items": [{"word": "alone", "use": "独自一人", "example": "She stayed at home alone."}, {"word": "lonely", "use": "感到孤单", "example": "The old man felt lonely."}]}, {"title": "hope / wish", "zh": "希望", "ms": "berharap", "rule": "hope 常用于可能实现的事情；wish 常用于较难实现、祝愿或遗憾。", "tip": "hope possible；wish unreal or greeting。", "items": [{"word": "hope", "use": "希望可能发生", "example": "I hope you pass the exam."}, {"word": "wish", "use": "祝愿或不现实愿望", "example": "I wish I could fly."}]}, {"title": "wear / dress / put on", "zh": "穿", "ms": "memakai", "rule": "wear 是穿着状态；put on 是穿上的动作；dress 后常接人。", "tip": "wear clothes；put on clothes；dress a child。", "items": [{"word": "wear", "use": "穿着状态", "example": "She is wearing a blue dress."}, {"word": "put on", "use": "穿上的动作", "example": "Put on your jacket."}, {"word": "dress", "use": "给某人穿衣", "example": "Mother dressed the baby."}]}, {"title": "bring / carry", "zh": "带来 / 搬运", "ms": "membawa", "rule": "bring 强调带到某处；carry 强调拿着、搬着的动作。", "tip": "bring here；carry in hands。", "items": [{"word": "bring", "use": "带到说话地点", "example": "Bring your book tomorrow."}, {"word": "carry", "use": "搬运或拿着", "example": "He carried the heavy box."}]}, {"title": "make / create / build", "zh": "制作 / 创造 / 建造", "ms": "membuat / mencipta / membina", "rule": "make 最普遍；create 强调创造新东西；build 强调建造结构。", "tip": "make a cake；create art；build a house。", "items": [{"word": "make", "use": "一般制作", "example": "We made a card."}, {"word": "create", "use": "创造新的东西", "example": "The pupils created a poster."}, {"word": "build", "use": "建造结构", "example": "They built a bridge."}]}, {"title": "fun / funny / enjoyable", "zh": "好玩 / 好笑 / 令人愉快", "ms": "seronok / lucu / menyeronokkan", "rule": "fun 是好玩；funny 是好笑；enjoyable 是令人愉快。", "tip": "fun game；funny joke；enjoyable trip。", "items": [{"word": "fun", "use": "好玩", "example": "The game was fun."}, {"word": "funny", "use": "好笑", "example": "The clown was funny."}, {"word": "enjoyable", "use": "令人愉快", "example": "The trip was enjoyable."}]}, {"title": "healthy / health / healthily", "zh": "健康的 / 健康 / 健康地", "ms": "sihat / kesihatan / secara sihat", "rule": "healthy 是形容词；health 是名词；healthily 是副词。", "tip": "healthy food；good health；eat healthily。", "items": [{"word": "healthy", "use": "形容词", "example": "Vegetables are healthy food."}, {"word": "health", "use": "名词", "example": "Exercise is good for our health."}, {"word": "healthily", "use": "副词", "example": "Children should eat healthily."}]}, {"title": "safe / safely / safety", "zh": "安全的 / 安全地 / 安全", "ms": "selamat / dengan selamat / keselamatan", "rule": "safe 是形容词；safely 是副词；safety 是名词。", "tip": "safe place；arrive safely；road safety。", "items": [{"word": "safe", "use": "形容词", "example": "This place is safe."}, {"word": "safely", "use": "副词", "example": "They arrived safely."}, {"word": "safety", "use": "名词", "example": "Road safety is important."}]}, {"title": "success / successful / successfully", "zh": "成功 / 成功的 / 成功地", "ms": "kejayaan / berjaya / dengan jayanya", "rule": "success 是名词；successful 是形容词；successfully 是副词。", "tip": "a success；successful event；complete successfully。", "items": [{"word": "success", "use": "名词", "example": "The event was a success."}, {"word": "successful", "use": "形容词", "example": "The event was successful."}, {"word": "successfully", "use": "副词", "example": "We completed the task successfully."}]}, {"title": "interest / interested / interesting", "zh": "兴趣 / 感兴趣 / 有趣", "ms": "minat / berminat / menarik", "rule": "interest 是名词或动词；interested 形容人；interesting 形容事物。", "tip": "interest noun；person interested；thing interesting。", "items": [{"word": "interest", "use": "兴趣", "example": "Reading is one of my interests."}, {"word": "interested", "use": "人感兴趣", "example": "I am interested in Science."}, {"word": "interesting", "use": "事物有趣", "example": "The lesson was interesting."}]}, {"title": "hard / difficult / hardly", "zh": "努力地 / 困难的 / 几乎不", "ms": "bersungguh-sungguh / sukar / hampir tidak", "rule": "hard 可指努力或坚硬；difficult 指困难；hardly 表示几乎不。", "tip": "work hard；difficult task；hardly any。", "items": [{"word": "hard", "use": "努力地", "example": "She studies hard."}, {"word": "difficult", "use": "困难的", "example": "The question is difficult."}, {"word": "hardly", "use": "几乎不", "example": "He could hardly speak."}]}, {"title": "too / very / enough", "zh": "太 / 非常 / 足够", "ms": "terlalu / sangat / cukup", "rule": "too 常表示过度而产生问题；very 只是加强程度；enough 表足够。", "tip": "too heavy to carry；very heavy；light enough。", "items": [{"word": "too", "use": "过度", "example": "The bag is too heavy to carry."}, {"word": "very", "use": "非常", "example": "The bag is very heavy."}, {"word": "enough", "use": "足够", "example": "The bag is light enough for me."}]}, {"title": "all / whole", "zh": "全部 / 整个", "ms": "semua / seluruh", "rule": "all 常接复数或不可数名词；whole 常接单数可数名词。", "tip": "all pupils；all water；the whole class。", "items": [{"word": "all", "use": "复数或不可数", "example": "All pupils must attend."}, {"word": "whole", "use": "完整的一个整体", "example": "The whole class joined the event."}]}, {"title": "each / every", "zh": "每个", "ms": "setiap", "rule": "each 强调逐个；every 强调整体中的每一个，后接单数名词。", "tip": "each one；every pupil。", "items": [{"word": "each", "use": "逐个强调", "example": "Each pupil received a book."}, {"word": "every", "use": "整体中的每一个", "example": "Every pupil wore a uniform."}]}, {"title": "both / all", "zh": "两者都 / 全部", "ms": "kedua-dua / semua", "rule": "both 只用于两者；all 用于三者或以上。", "tip": "both two；all three or more。", "items": [{"word": "both", "use": "两者都", "example": "Both boys are helpful."}, {"word": "all", "use": "三者或以上全部", "example": "All the pupils were ready."}]}, {"title": "either / neither", "zh": "两者之一 / 两者都不", "ms": "salah satu / kedua-duanya tidak", "rule": "either 表两者之一；neither 表两者都不。", "tip": "either one；neither none。", "items": [{"word": "either", "use": "两者之一", "example": "You may choose either book."}, {"word": "neither", "use": "两者都不", "example": "Neither answer is correct."}]}, {"title": "another / other / the other / others", "zh": "另一个 / 其他 / 另一个特定的 / 其他人或物", "ms": "satu lagi / lain / yang satu lagi / yang lain", "rule": "another + 单数；other + 名词；the other 指两者中的另一个；others 单独使用。", "tip": "another book；other books；the other one；some...others。", "items": [{"word": "another", "use": "另一个单数", "example": "May I have another glass?"}, {"word": "other", "use": "其他，后接名词", "example": "Other pupils waited outside."}, {"word": "the other", "use": "两者中的另一个", "example": "One bag is red; the other is blue."}, {"word": "others", "use": "其他人或物", "example": "Some played while others watched."}]}, {"title": "already / yet / still", "zh": "已经 / 还；尚未 / 仍然", "ms": "sudah / masih belum / masih", "rule": "already 常用于肯定句；yet 常用于疑问和否定句末；still 表示状态持续。", "tip": "already done；not yet；still doing。", "items": [{"word": "already", "use": "已经", "example": "I have already finished."}, {"word": "yet", "use": "尚未或已经了吗", "example": "Have you finished yet?"}, {"word": "still", "use": "仍然", "example": "She is still studying."}]}, {"title": "ever / never", "zh": "曾经 / 从不", "ms": "pernah / tidak pernah", "rule": "ever 常用于疑问或最高级；never 表示从未。", "tip": "Have you ever...?；I have never...。", "items": [{"word": "ever", "use": "曾经", "example": "Have you ever visited Sabah?"}, {"word": "never", "use": "从未", "example": "I have never seen snow."}]}, {"title": "ago / before", "zh": "以前", "ms": "yang lalu / sebelum", "rule": "ago 从现在往前算；before 可配某个过去时间或事件。", "tip": "two days ago；before dinner。", "items": [{"word": "ago", "use": "距现在多久以前", "example": "We met two days ago."}, {"word": "before", "use": "某事件之前", "example": "Wash your hands before dinner."}]}, {"title": "during / while", "zh": "在……期间", "ms": "semasa", "rule": "during 后接名词；while 后接完整句子。", "tip": "during the lesson；while I was reading。", "items": [{"word": "during", "use": "后接名词", "example": "Do not talk during the lesson."}, {"word": "while", "use": "后接主语和动词", "example": "I listened while she was speaking."}]}, {"title": "since / for", "zh": "自从 / 持续", "ms": "sejak / selama", "rule": "since 后接起点；for 后接时间长度。", "tip": "since Monday；for two days。", "items": [{"word": "since", "use": "时间起点", "example": "I have lived here since 2020."}, {"word": "for", "use": "时间长度", "example": "I have lived here for five years."}]}, {"title": "made of / made from", "zh": "由……制成", "ms": "diperbuat daripada", "rule": "made of 看得出原材料；made from 原材料已改变。", "tip": "table made of wood；paper made from wood。", "items": [{"word": "made of", "use": "材料仍可辨认", "example": "The table is made of wood."}, {"word": "made from", "use": "材料经过变化", "example": "Paper is made from wood."}]}, {"title": "like / as", "zh": "像 / 作为", "ms": "seperti / sebagai", "rule": "like 表相似；as 表身份、角色或“按照”。", "tip": "look like；work as。", "items": [{"word": "like", "use": "像", "example": "He runs like the wind."}, {"word": "as", "use": "作为", "example": "She works as a nurse."}]}, {"title": "and / but / or / so", "zh": "和 / 但是 / 或者 / 所以", "ms": "dan / tetapi / atau / jadi", "rule": "and 补充；but 转折；or 选择；so 结果。", "tip": "add, contrast, choice, result。", "items": [{"word": "and", "use": "补充", "example": "She bought bread and milk."}, {"word": "but", "use": "转折", "example": "He is tired but happy."}, {"word": "or", "use": "选择", "example": "Would you like tea or juice?"}, {"word": "so", "use": "结果", "example": "It was raining, so we stayed inside."}]}];
+const savedSet=new Set(JSON.parse(localStorage.getItem("uasaBook11Saved")||"[]"));
+document.getElementById("groupCount").textContent=GROUPS.length;
+document.getElementById("wordCount").textContent=GROUPS.reduce((n,g)=>n+g.items.length,0);
+document.getElementById("best").textContent=(localStorage.getItem("uasaBook11Best")||0)+"%";
+
+let englishVoice=null;
+function loadEnglishVoice(){
+ const voices=speechSynthesis.getVoices();
+ englishVoice=voices.find(v=>v.lang==="en-GB"&&/Google|Microsoft|Siri|Daniel|Serena/i.test(v.name))||
+ voices.find(v=>v.lang==="en-GB")||voices.find(v=>/^en/i.test(v.lang))||null;
+}
+if("speechSynthesis" in window){loadEnglishVoice();speechSynthesis.onvoiceschanged=loadEnglishVoice}
+function speak(text){
+ if(!("speechSynthesis" in window))return;
+ const clean=String(text).replace(/[／/|]/g,", ").replace(/[（）()]/g," ").replace(/\s+/g," ").trim();
+ if(!clean)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.lang="en-GB";u.rate=.76;u.pitch=1;u.volume=1;if(englishVoice)u.voice=englishVoice;speechSynthesis.speak(u)
+}
+function toggle(title){savedSet.has(title)?savedSet.delete(title):savedSet.add(title);localStorage.setItem("uasaBook11Saved",JSON.stringify([...savedSet]));render()}
+function render(){
+ const q=document.getElementById("search").value.trim().toLowerCase(),mode=document.getElementById("view").value;
+ const list=GROUPS.filter(g=>(!q||[g.title,g.zh,g.ms,g.rule,g.tip,...g.items.flatMap(i=>[i.word,i.use,i.example])].join(" ").toLowerCase().includes(q))&&(mode!=="saved"||savedSet.has(g.title)));
+ const grid=document.getElementById("grid");grid.innerHTML="";
+ list.forEach(g=>{
+  const c=document.createElement("article");c.className="card";
+  c.innerHTML=`<button class="star ${savedSet.has(g.title)?"on":""}">★</button><h2>${g.title}</h2><div class="rule"><b>差别：</b>${g.rule}<br><b>BM：</b>${g.ms}</div><div class="tip">口诀：${g.tip}</div><div class="items"></div>`;
+  c.querySelector(".star").onclick=()=>toggle(g.title);
+  const box=c.querySelector(".items");
+  g.items.forEach(i=>{
+   const d=document.createElement("div");d.className="item";
+   d.innerHTML=`<div class="word">${i.word}</div><div><b>用法：</b>${i.use}</div><div><b>Example:</b> ${i.example}</div><div class="actions"><button class="speak">🔊 English Word</button><button class="soft">🔊 English Sentence</button></div>`;
+   const b=d.querySelectorAll("button");b[0].onclick=()=>speak(i.word);b[1].onclick=()=>speak(i.example);box.appendChild(d)
+  });
+  grid.appendChild(c)
+ });
+ document.getElementById("empty").classList.toggle("hidden",list.length>0);document.getElementById("saved").textContent=savedSet.size
+}
+document.getElementById("search").addEventListener("input",render);document.getElementById("view").addEventListener("change",render);render();
+
+let quiz=[],qi=0,score=0,answered=false;
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function makeQuestions(){
+ let q=[];
+ GROUPS.forEach(g=>g.items.forEach(i=>{
+  const escaped=i.word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const sentence=i.example.replace(new RegExp("\\b"+escaped+"\\b","i"),"_____");
+  q.push({group:g,correct:i.word,sentence,choices:shuffle(g.items.map(x=>x.word))})
+ }));
+ return shuffle(q)
+}
+function startQuiz(){quiz=makeQuestions().slice(0,10);qi=0;score=0;document.getElementById("modal").classList.remove("hidden");showQuestion()}
+function showQuestion(){
+ answered=false;const q=quiz[qi];document.getElementById("counter").textContent=`Question ${qi+1} / ${quiz.length}`;document.getElementById("bar").style.width=(qi/quiz.length*100)+"%";
+ document.getElementById("prompt").textContent=q.group.title;document.getElementById("sentence").textContent=q.sentence;document.getElementById("result").textContent="";document.getElementById("next").classList.add("hidden");
+ const box=document.getElementById("options");box.innerHTML="";
+ q.choices.forEach(ch=>{const b=document.createElement("button");b.className="option";b.textContent=ch;b.onclick=()=>answer(b,ch===q.correct,q);box.appendChild(b)})
+}
+function answer(btn,ok,q){
+ if(answered)return;answered=true;document.querySelectorAll(".option").forEach(b=>{b.disabled=true;if(b.textContent===q.correct)b.classList.add("correct")});
+ if(ok){score++;document.getElementById("result").textContent="Correct! 答对了。"}else{btn.classList.add("wrong");document.getElementById("result").textContent=`Correct answer: ${q.correct}. ${q.group.rule}`}
+ document.getElementById("next").classList.remove("hidden")
+}
+function nextQuestion(){
+ qi++;if(qi<quiz.length){showQuestion();return}
+ const pct=Math.round(score/quiz.length*100),best=Math.max(pct,Number(localStorage.getItem("uasaBook11Best")||0));
+ localStorage.setItem("uasaBook11Best",best);document.getElementById("best").textContent=best+"%";document.getElementById("bar").style.width="100%";
+ document.getElementById("prompt").textContent=`${score} / ${quiz.length} (${pct}%)`;document.getElementById("sentence").textContent=pct>=80?"Excellent! You can distinguish these words.":"Review the rules and try again.";
+ document.getElementById("options").innerHTML="";document.getElementById("result").textContent="";document.getElementById("next").classList.add("hidden")
+}
+function closeQuiz(){speechSynthesis.cancel();document.getElementById("modal").classList.add("hidden")}
+</script></body></html>
