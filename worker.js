@@ -13,8 +13,10 @@ export default {
     const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:cors});
     const teacherAllowed=()=>url.searchParams.get('key')==='008';
     const makeCode=(id)=>'UASA-'+String(id).replace(/-/g,'').slice(0,6).toUpperCase();
+    const AVATARS=new Set(['rookie-blue','fox-orange','owl-purple','tiger-gold','dragon-red','crown-black']);
+    const TITLES=new Set(['Vocabulary Rookie','Combo Hunter','Rival Breaker','Perfect Speller','Book Master','UASA Legend']);
     try {
-      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress V2.3'});
+      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress V2.8'});
 
       if (url.pathname === '/api/student/register' && request.method === 'POST') {
         const body=await request.json(),code=String(body.student_code||'').trim().toUpperCase(),name=String(body.name||'').trim(),className=String(body.class_name||'').trim();
@@ -23,6 +25,7 @@ export default {
           if(!s) return json({error:'Student code not found'},404);
           await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(s.id).run();
           await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(s.id).run();
+          await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(s.id).run();
           return json({ok:true,id:s.id,name:s.name,class_name:s.class_name,student_code:s.student_code,restored:true,login_method:'code'});
         }
         if(!name) return json({error:'Name required'},400);
@@ -33,11 +36,13 @@ export default {
           if(!studentCode){studentCode=makeCode(s.id);await env.DB.prepare('UPDATE students SET student_code=?,last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(studentCode,s.id).run();}
           else await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(s.id).run();
           await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(s.id).run();
+          await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(s.id).run();
           return json({ok:true,id:s.id,name:s.name,class_name:s.class_name,student_code:studentCode,restored:true,login_method:'name_class'});
         }
         const id=String(body.id||crypto.randomUUID()),studentCode=makeCode(id);
         await env.DB.prepare(`INSERT INTO students(id,name,class_name,student_code,last_seen) VALUES(?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(id) DO UPDATE SET name=excluded.name,class_name=excluded.class_name,student_code=CASE WHEN students.student_code='' THEN excluded.student_code ELSE students.student_code END,last_seen=CURRENT_TIMESTAMP`).bind(id,name,className,studentCode).run();
         await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(id).run();
+        await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(id).run();
         return json({ok:true,id,name,class_name:className,student_code:studentCode,restored:false,login_method:'new'});
       }
 
@@ -85,14 +90,66 @@ export default {
         const list=(rows.results||[]).map((x,i)=>({...x,rank:i+1,total_xp:Number(x.total_xp||0),best_streak:Number(x.best_streak||0),books_mastered:Number(x.books_mastered||0)}));
         const idx=list.findIndex(x=>String(x.id)===studentId);
         if(idx<0) return json({error:'Student not found'},404);
-        const me=list[idx];
-        const start=Math.max(0,idx-2),end=Math.min(list.length,idx+3);
-        const nearby=list.slice(start,end);
-        const above=idx>0?list[idx-1]:null;
-        const below=idx<list.length-1?list[idx+1]:null;
+        const me=list[idx],start=Math.max(0,idx-2),end=Math.min(list.length,idx+3),nearby=list.slice(start,end),above=idx>0?list[idx-1]:null,below=idx<list.length-1?list[idx+1]:null;
         let rival=null;
         if(above&&below){const da=Math.abs(Number(above.total_xp)-Number(me.total_xp)),db=Math.abs(Number(below.total_xp)-Number(me.total_xp));rival=da<=db?above:below}else rival=above||below;
-        return json({leaderboard:nearby,my_rank:me.rank,me,rival,total_students:list.length});
+        return json({leaderboard:nearby,near_me:nearby.map(x=>({...x,is_me:x.id===studentId})),my_rank:me.rank,me,rival,total_students:list.length});
+      }
+
+      if (url.pathname === '/api/game/profile' && request.method === 'GET') {
+        const id=String(url.searchParams.get('student_id')||'');
+        if(!id) return json({error:'student_id required'},400);
+        await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO NOTHING`).bind(id).run();
+        const profile=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();
+        const inventory=await env.DB.prepare('SELECT * FROM game_inventory WHERE student_id=? ORDER BY purchased_at').bind(id).all();
+        return json({profile:profile||null,inventory:inventory.results||[]});
+      }
+
+      if (url.pathname === '/api/game/earn' && request.method === 'POST') {
+        const b=await request.json(),id=String(b.student_id||''),amount=Math.max(0,Math.min(500,Number(b.amount||0))),reason=String(b.reason||'reward').slice(0,120),ref=String(b.reference_key||'').slice(0,180);
+        if(!id||!amount) return json({error:'student_id and positive amount required'},400);
+        await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO NOTHING`).bind(id).run();
+        if(ref){
+          const old=await env.DB.prepare('SELECT id FROM coin_ledger WHERE student_id=? AND reference_key=? LIMIT 1').bind(id,ref).first();
+          if(old){const profile=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();return json({ok:true,duplicate:true,profile});}
+        }
+        await env.DB.batch([
+          env.DB.prepare('UPDATE game_wallet SET coins=coins+?,lifetime_coins=lifetime_coins+?,updated_at=CURRENT_TIMESTAMP WHERE student_id=?').bind(amount,amount,id),
+          env.DB.prepare('INSERT INTO coin_ledger(student_id,amount,reason,reference_key) VALUES(?,?,?,?)').bind(id,amount,reason,ref)
+        ]);
+        const profile=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();
+        return json({ok:true,profile});
+      }
+
+      if (url.pathname === '/api/game/buy' && request.method === 'POST') {
+        const b=await request.json(),id=String(b.student_id||''),key=String(b.item_key||''),type=String(b.item_type||''),name=String(b.item_name||key),price=Math.max(0,Number(b.price||0));
+        if(!id||!key||!['avatar','title'].includes(type)) return json({error:'Invalid purchase'},400);
+        if(type==='avatar'&&!AVATARS.has(key)) return json({error:'Unknown avatar'},400);
+        if(type==='title'&&!TITLES.has(key)) return json({error:'Unknown title'},400);
+        const owned=await env.DB.prepare('SELECT item_key FROM game_inventory WHERE student_id=? AND item_key=?').bind(id,key).first();
+        if(owned){const p=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();return json({ok:true,already_owned:true,coins:Number(p?.coins||0)});}
+        await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO NOTHING`).bind(id).run();
+        const p=await env.DB.prepare('SELECT coins FROM game_wallet WHERE student_id=?').bind(id).first();
+        if(Number(p?.coins||0)<price) return json({error:'Not enough coins'},400);
+        await env.DB.batch([
+          env.DB.prepare('UPDATE game_wallet SET coins=coins-?,updated_at=CURRENT_TIMESTAMP WHERE student_id=?').bind(price,id),
+          env.DB.prepare('INSERT INTO game_inventory(student_id,item_key,item_type,item_name,price) VALUES(?,?,?,?,?)').bind(id,key,type,name,price),
+          env.DB.prepare('INSERT INTO coin_ledger(student_id,amount,reason,reference_key) VALUES(?,?,?,?)').bind(id,-price,'shop:'+key,'buy:'+key)
+        ]);
+        const now=await env.DB.prepare('SELECT coins FROM game_wallet WHERE student_id=?').bind(id).first();
+        return json({ok:true,coins:Number(now?.coins||0)});
+      }
+
+      if (url.pathname === '/api/game/equip' && request.method === 'POST') {
+        const b=await request.json(),id=String(b.student_id||''),key=String(b.item_key||''),type=String(b.item_type||'');
+        if(!id||!key||!['avatar','title'].includes(type)) return json({error:'Invalid equip'},400);
+        const free=(type==='avatar'&&key==='rookie-blue')||(type==='title'&&key==='Vocabulary Rookie');
+        if(!free){const owned=await env.DB.prepare('SELECT item_key FROM game_inventory WHERE student_id=? AND item_key=?').bind(id,key).first();if(!owned)return json({error:'Item not owned'},403);}
+        await env.DB.prepare(`INSERT INTO game_wallet(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP) ON CONFLICT(student_id) DO NOTHING`).bind(id).run();
+        if(type==='avatar') await env.DB.prepare('UPDATE game_wallet SET equipped_avatar=?,updated_at=CURRENT_TIMESTAMP WHERE student_id=?').bind(key,id).run();
+        else await env.DB.prepare('UPDATE game_wallet SET equipped_title=?,updated_at=CURRENT_TIMESTAMP WHERE student_id=?').bind(key,id).run();
+        const profile=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();
+        return json({ok:true,profile});
       }
 
       if (url.pathname === '/api/boss/save' && request.method === 'POST') {
@@ -150,7 +207,8 @@ export default {
         const bosses=await env.DB.prepare('SELECT * FROM boss_results WHERE student_id=? ORDER BY books_from').bind(id).all();
         const achievements=await env.DB.prepare('SELECT * FROM achievements WHERE student_id=? ORDER BY unlocked_at').bind(id).all();
         const assignments=await env.DB.prepare(`SELECT * FROM assignments WHERE student_id=? ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END,id DESC LIMIT 50`).bind(id).all();
-        return json({student,books:books.results||[],recent:recent.results||[],progress:progress||null,levels:levels.results||[],bosses:bosses.results||[],achievements:achievements.results||[],assignments:assignments.results||[]});
+        const game=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();
+        return json({student,books:books.results||[],recent:recent.results||[],progress:progress||null,levels:levels.results||[],bosses:bosses.results||[],achievements:achievements.results||[],assignments:assignments.results||[],game:game||null});
       }
 
       if (url.pathname === '/api/teacher/students' && request.method === 'GET') {
@@ -170,7 +228,8 @@ export default {
         const bosses=await env.DB.prepare('SELECT * FROM boss_results WHERE student_id=? ORDER BY books_from').bind(id).all();
         const achievements=await env.DB.prepare('SELECT * FROM achievements WHERE student_id=? ORDER BY unlocked_at').bind(id).all();
         const assignments=await env.DB.prepare('SELECT * FROM assignments WHERE student_id=? ORDER BY id DESC').bind(id).all();
-        return json({student,books:books.results||[],wrong_items:wrongItems.results||[],progress:progress||null,levels:levels.results||[],bosses:bosses.results||[],achievements:achievements.results||[],assignments:assignments.results||[]});
+        const game=await env.DB.prepare('SELECT * FROM game_wallet WHERE student_id=?').bind(id).first();
+        return json({student,books:books.results||[],wrong_items:wrongItems.results||[],progress:progress||null,levels:levels.results||[],bosses:bosses.results||[],achievements:achievements.results||[],assignments:assignments.results||[],game:game||null});
       }
 
       return json({error:'Not found'},404);
