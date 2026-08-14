@@ -15,7 +15,8 @@
 const params=new URLSearchParams(location.search);const file=params.get('file')||'';
 const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
 const frame=document.getElementById('frame');
-const API=localStorage.getItem('uasaApiBase')||'';
+const API='https://moe-uasa-english-api.darkgeneration77.workers.dev';
+localStorage.setItem('uasaApiBase',API);
 const studentId=()=>localStorage.getItem('uasaStudentId')||'';
 const bookMatch=file.match(/Book_(\d+)/i);const BOOK_NO=bookMatch?Number(bookMatch[1]):0;
 const BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
