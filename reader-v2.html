@@ -1,107 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MOE UASA English Reader</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#071522}.bar{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:linear-gradient(90deg,#081a2c,#12375b);border-bottom:1px solid #2e5778;color:#fff;flex-wrap:wrap}.links{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{display:inline-flex;text-decoration:none;color:#fff;background:#1b5f96;border:1px solid #6fc8e5;padding:9px 12px;border-radius:10px;font-weight:800;cursor:pointer}.level-btn{background:#17324e;border-color:#3d6487}.level-btn.active{background:#2563eb;border-color:#93c5fd}.meta{text-align:right;min-width:0}.title{font-size:13px;color:#c9deef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}.status{font-size:12px;margin-top:4px;color:#ffd166}.status.ok{color:#86efac}.status.bad{color:#fca5a5}.frame{width:100%;height:calc(100% - 74px);border:0;background:#fff}@media(max-width:760px){.bar{min-height:118px}.frame{height:calc(100% - 118px)}.title{display:none}.btn.dash{display:none}.meta{width:100%;text-align:left}}
-</style>
-</head>
-<body>
-<div class="bar">
-  <div class="links">
-    <a class="btn" href="index.html">← Home</a>
-    <a class="btn dash" href="student-dashboard.html">Student Dashboard</a>
-    <button class="btn level-btn" data-level="1">Level 1</button>
-    <button class="btn level-btn" data-level="2">Level 2</button>
-    <button class="btn level-btn" data-level="3">Level 3</button>
-    <button class="btn level-btn" data-level="4">Level 4</button>
-  </div>
-  <div class="meta"><div class="title" id="label">Learning Module</div><div class="status" id="sync">Checking student…</div></div>
-</div>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MOE UASA English Reader</title>
+<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#071522}.bar{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:linear-gradient(90deg,#081a2c,#12375b);border-bottom:1px solid #2e5778;color:#fff;flex-wrap:wrap}.links{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{display:inline-flex;text-decoration:none;color:#fff;background:#1b5f96;border:1px solid #6fc8e5;padding:9px 12px;border-radius:10px;font-weight:800;cursor:pointer}.level-btn{background:#17324e;border-color:#3d6487}.level-btn.active{background:#2563eb;border-color:#93c5fd}.level-btn.locked{opacity:.45;cursor:not-allowed}.meta{text-align:right;min-width:0}.title{font-size:13px;color:#c9deef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}.status{font-size:12px;margin-top:4px;color:#ffd166}.status.ok{color:#86efac}.status.bad{color:#fca5a5}.game{font-size:12px;margin-top:4px;color:#dbeafe}.game b{color:#fde68a}.frame{width:100%;height:calc(100% - 82px);border:0;background:#fff}@media(max-width:760px){.bar{min-height:136px}.frame{height:calc(100% - 136px)}.title{display:none}.btn.dash{display:none}.meta{width:100%;text-align:left}}</style></head><body>
+<div class="bar"><div class="links"><a class="btn" href="index.html">← Home</a><a class="btn dash" href="student-dashboard.html">Student Dashboard</a><button class="btn level-btn" data-level="1">Level 1</button><button class="btn level-btn" data-level="2">Level 2</button><button class="btn level-btn" data-level="3">Level 3</button><button class="btn level-btn" data-level="4">Level 4</button></div><div class="meta"><div class="title" id="label">Learning Module</div><div class="status" id="sync">Checking student…</div><div class="game"><b id="xp">0 XP</b> · Streak <b id="streak">0</b> · <span id="mastery">Level 1 Mastery 0%</span></div></div></div>
 <iframe id="frame" class="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"></iframe>
 <script>
 const API='https://moe-uasa-english-api.darkgeneration77.workers.dev';
-const p=new URLSearchParams(location.search),file=p.get('file')||'';
-const frame=document.getElementById('frame'),sync=document.getElementById('sync'),label=document.getElementById('label');
-const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
-const sid=()=>localStorage.getItem('uasaStudentId')||'';
-const sname=()=>localStorage.getItem('uasaStudentName')||'';
-const m=file.match(/Book_(\d+)/i),BOOK_NO=m?Number(m[1]):0;
-const BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
-let CURRENT_LEVEL=Number(sessionStorage.getItem('uasaCurrentLevel')||1);if(CURRENT_LEVEL<1||CURRENT_LEVEL>4)CURRENT_LEVEL=1;
-localStorage.setItem('uasaApiBase',API);
+const p=new URLSearchParams(location.search),file=p.get('file')||'';const frame=document.getElementById('frame'),sync=document.getElementById('sync'),label=document.getElementById('label');const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
+const sid=()=>localStorage.getItem('uasaStudentId')||'';const sname=()=>localStorage.getItem('uasaStudentName')||'';const m=file.match(/Book_(\d+)/i),BOOK_NO=m?Number(m[1]):0;const BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');let CURRENT_LEVEL=Number(sessionStorage.getItem('uasaCurrentLevel')||1);if(CURRENT_LEVEL<1||CURRENT_LEVEL>4)CURRENT_LEVEL=1;localStorage.setItem('uasaApiBase',API);
+const baseKey=()=>`uasa:${sid()}:book:${BOOK_NO}`;const key=(n)=>`${baseKey()}:${n}`;const getNum=(k,d=0)=>Number(localStorage.getItem(k)||d);const setNum=(k,v)=>localStorage.setItem(k,String(v));
 function setStatus(text,type=''){sync.textContent=text;sync.className='status '+type}
-function refreshLevelButtons(){document.querySelectorAll('.level-btn').forEach(b=>b.classList.toggle('active',Number(b.dataset.level)===CURRENT_LEVEL))}
-function levelSlice(arr){if(!Array.isArray(arr)||!arr.length)return arr;const size=Math.ceil(arr.length/4);const start=(CURRENT_LEVEL-1)*size;return arr.slice(start,Math.min(start+size,arr.length))}
-async function track(event_type,extra={}){
-  if(!sid()){setStatus('Student login required','bad');return false}
-  if(!BOOK_NO){setStatus('Book number not detected','bad');return false}
-  const levelTag='Level '+CURRENT_LEVEL;
-  const mode=extra.quiz_mode?levelTag+' · '+extra.quiz_mode:levelTag;
-  try{
-    const r=await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid(),book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,...extra,quiz_mode:mode})});
-    const text=await r.text();if(!r.ok){setStatus('Sync failed: '+text,'bad');return false}
-    setStatus(event_type==='answer'?'Level '+CURRENT_LEVEL+' · Saved: '+(extra.is_correct?'Correct':'Wrong'):'Level '+CURRENT_LEVEL+' · '+(sname()||'student'),'ok');return true;
-  }catch(e){setStatus('Sync error: '+e.message,'bad');return false}
-}
-function chooseLevel(n){CURRENT_LEVEL=n;sessionStorage.setItem('uasaCurrentLevel',String(n));refreshLevelButtons();setStatus('Level '+n+' selected · reopen quiz/practice','ok');try{applyLevelHooks()}catch(e){}}
-document.querySelectorAll('.level-btn').forEach(b=>b.addEventListener('click',()=>chooseLevel(Number(b.dataset.level))));refreshLevelButtons();
-if(!sid()){sessionStorage.setItem('uasaPendingBook',file);location.replace('index.html?login=1')}else if(!allowed.test(file)||['index.html','reader.html','reader-v2.html'].includes(file)){setStatus('Invalid module','bad');frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>'}else{frame.src=file;label.textContent=BOOK_TITLE}
-let hooked=false;
-function applyLevelHooks(){
-  if(!frame.contentWindow||!frame.contentDocument)return;
-  const w=frame.contentWindow,d=frame.contentDocument;
-  if(typeof w.WORDS!=='undefined'&&Array.isArray(w.WORDS)){
-    if(!w.__ALL_WORDS)w.__ALL_WORDS=[...w.WORDS];
-    const slice=levelSlice(w.__ALL_WORDS);try{w.WORDS.splice(0,w.WORDS.length,...slice)}catch(e){w.WORDS=slice}
-    const wc=d.getElementById('wordCount');if(wc)wc.textContent=slice.length;
-  }
-  if(typeof w.ENTRIES!=='undefined'&&Array.isArray(w.ENTRIES)){
-    if(!w.__ALL_ENTRIES)w.__ALL_ENTRIES=[...w.ENTRIES];
-    const slice=levelSlice(w.__ALL_ENTRIES);try{w.ENTRIES.splice(0,w.ENTRIES.length,...slice)}catch(e){w.ENTRIES=slice}
-    const tq=d.getElementById('totalQuestions');if(tq)tq.textContent=slice.length;
-  }
-  if(typeof w.QUESTIONS!=='undefined'&&Array.isArray(w.QUESTIONS)){
-    if(!w.__ALL_QUESTIONS)w.__ALL_QUESTIONS=[...w.QUESTIONS];
-    const slice=levelSlice(w.__ALL_QUESTIONS);try{w.QUESTIONS.splice(0,w.QUESTIONS.length,...slice)}catch(e){w.QUESTIONS=slice}
-    const qc=d.getElementById('questionCount');if(qc)qc.textContent=slice.length;
-    if(typeof w.render==='function')try{w.render()}catch(e){}
-    if(typeof w.renderQuestions==='function')try{w.renderQuestions()}catch(e){}
-  }
-  if(typeof w.Q!=='undefined'&&Array.isArray(w.Q)){
-    if(!w.__ALL_Q)w.__ALL_Q=[...w.Q];const slice=levelSlice(w.__ALL_Q);try{w.Q.splice(0,w.Q.length,...slice)}catch(e){w.Q=slice}
-  }
-}
-frame.addEventListener('load',()=>{
-  if(!sid())return;track('book_open',{quiz_mode:'Level '+CURRENT_LEVEL});
-  try{
-    const w=frame.contentWindow,d=frame.contentDocument;applyLevelHooks();
-    if(!hooked){
-      hooked=true;
-      try{if(typeof w.startQuiz==='function'){
-        const old=w.startQuiz;w.startQuiz=function(){applyLevelHooks();const out=old.apply(this,arguments);try{if(Array.isArray(w.quiz)){w.quiz=levelSlice(w.quiz);w.qi=0;w.score=0;if(typeof w.showQuestion==='function')w.showQuestion()}}catch(e){}return out};
-      }}catch(e){}
-      try{if(typeof w.startFinal==='function'){
-        const old=w.startFinal;w.startFinal=function(){applyLevelHooks();const out=old.apply(this,arguments);try{if(Array.isArray(w.quiz)){w.quiz=levelSlice(w.quiz);w.qi=0;w.score=0;if(typeof w.showQuestion==='function')w.showQuestion()}}catch(e){}return out};
-      }}catch(e){}
-      try{if(typeof w.startModule==='function'){
-        const old=w.startModule;w.startModule=function(){applyLevelHooks();const out=old.apply(this,arguments);try{if(Array.isArray(w.quiz)){w.quiz=levelSlice(w.quiz);w.qi=0;w.score=0;if(typeof w.showQuestion==='function')w.showQuestion()}}catch(e){}return out};
-      }}catch(e){}
-    }
-    ['qCount','questionCount'].forEach(id=>{const el=d.getElementById(id);if(el&&id==='qCount')el.remove()});
-    let lastKey='';const text=(sel)=>{const el=d.querySelector(sel);return el?(el.textContent||'').trim():''};
-    function inspect(answerText=''){
-      const counter=text('#counter');const result=text('#result,.result');const question=text('#prompt,#qPrompt,.prompt,.qprompt')||text('#instruction');const mode=text('#quizTitle,#title,.top b');let correct=null;
-      if(/Incorrect|答错了|Correct answer:/i.test(result))correct=false;else if(/Correct spelling|拼写正确|Correct!|答对了/i.test(result))correct=true;if(correct===null)return;
-      const key=BOOK_NO+'|L'+CURRENT_LEVEL+'|'+counter+'|'+question;if(key===lastKey)return;lastKey=key;
-      track('answer',{question_key:key,question_text:question,answer_text:String(answerText||''),is_correct:correct,quiz_mode:mode});
-      const mm=counter.match(/(\d+)\s*\/\s*(\d+)/);if(mm&&Number(mm[1])===Number(mm[2]))track('quiz_complete',{question_key:BOOK_NO+'|L'+CURRENT_LEVEL+'|'+mode+'|'+mm[2],quiz_mode:mode});
-    }
-    d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const inp=d.querySelector('#spellInput,#answerArea input,.textanswer,input.answer');const val=inp?inp.value:(b.textContent||'').trim();setTimeout(()=>inspect(val),180)},true);
-    d.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.repeat)return;const active=d.activeElement;const val=active&&('value' in active)?active.value:'';setTimeout(()=>inspect(val),180)},true);
-    const resultEl=d.querySelector('#result,.result');if(resultEl){new MutationObserver(()=>{const inp=d.querySelector('#spellInput,#answerArea input,.textanswer,input.answer');setTimeout(()=>inspect(inp?inp.value:''),40)}).observe(resultEl,{childList:true,subtree:true,characterData:true})}
-  }catch(e){setStatus('Reader hook error: '+e.message,'bad')}
-});
-</script>
-</body></html>
+function masteryFor(level){return getNum(key('L'+level+':mastery'),0)}
+function unlocked(level){return level===1||masteryFor(level-1)>=80}
+function refreshHUD(){document.getElementById('xp').textContent=getNum(key('xp'))+' XP';document.getElementById('streak').textContent=getNum(key('streak'));document.getElementById('mastery').textContent='Level '+CURRENT_LEVEL+' Mastery '+masteryFor(CURRENT_LEVEL)+'%';document.querySelectorAll('.level-btn').forEach(b=>{const n=Number(b.dataset.level);b.classList.toggle('active',n===CURRENT_LEVEL);b.classList.toggle('locked',!unlocked(n));b.textContent='Level '+n+(unlocked(n)?(masteryFor(n)>=80?' ✓':''):' 🔒')})}
+function levelSlice(arr){if(!Array.isArray(arr)||!arr.length)return arr;const size=Math.ceil(arr.length/4),start=(CURRENT_LEVEL-1)*size;return arr.slice(start,Math.min(start+size,arr.length))}
+async function track(event_type,extra={}){if(!sid()){setStatus('Student login required','bad');return false}if(!BOOK_NO){setStatus('Book number not detected','bad');return false}const levelTag='Level '+CURRENT_LEVEL;const mode=extra.quiz_mode?levelTag+' · '+extra.quiz_mode:levelTag;try{const r=await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid(),book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,...extra,quiz_mode:mode})});const text=await r.text();if(!r.ok){setStatus('Sync failed: '+text,'bad');return false}setStatus(event_type==='answer'?levelTag+' · Saved: '+(extra.is_correct?'Correct':'Wrong'):levelTag+' · '+(sname()||'student'),'ok');return true}catch(e){setStatus('Sync error: '+e.message,'bad');return false}}
+function chooseLevel(n){if(!unlocked(n)){setStatus('Level '+n+' locked · Master Level '+(n-1)+' with 80% first','bad');return}CURRENT_LEVEL=n;sessionStorage.setItem('uasaCurrentLevel',String(n));refreshHUD();setStatus('Level '+n+' selected · reopen quiz/practice','ok');try{applyLevelHooks()}catch(e){}}
+document.querySelectorAll('.level-btn').forEach(b=>b.addEventListener('click',()=>chooseLevel(Number(b.dataset.level))));
+if(!sid()){sessionStorage.setItem('uasaPendingBook',file);location.replace('index.html?login=1')}else if(!allowed.test(file)||['index.html','reader.html','reader-v2.html'].includes(file)){setStatus('Invalid module','bad');frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>'}else{frame.src=file;label.textContent=BOOK_TITLE}refreshHUD();
+let hooked=false;function applyLevelHooks(){if(!frame.contentWindow||!frame.contentDocument)return;const w=frame.contentWindow,d=frame.contentDocument;if(typeof w.WORDS!=='undefined'&&Array.isArray(w.WORDS)){if(!w.__ALL_WORDS)w.__ALL_WORDS=[...w.WORDS];const slice=levelSlice(w.__ALL_WORDS);try{w.WORDS.splice(0,w.WORDS.length,...slice)}catch(e){w.WORDS=slice}const wc=d.getElementById('wordCount');if(wc)wc.textContent=slice.length}if(typeof w.ENTRIES!=='undefined'&&Array.isArray(w.ENTRIES)){if(!w.__ALL_ENTRIES)w.__ALL_ENTRIES=[...w.ENTRIES];const slice=levelSlice(w.__ALL_ENTRIES);try{w.ENTRIES.splice(0,w.ENTRIES.length,...slice)}catch(e){w.ENTRIES=slice}const tq=d.getElementById('totalQuestions');if(tq)tq.textContent=slice.length}if(typeof w.QUESTIONS!=='undefined'&&Array.isArray(w.QUESTIONS)){if(!w.__ALL_QUESTIONS)w.__ALL_QUESTIONS=[...w.QUESTIONS];const slice=levelSlice(w.__ALL_QUESTIONS);try{w.QUESTIONS.splice(0,w.QUESTIONS.length,...slice)}catch(e){w.QUESTIONS=slice}const qc=d.getElementById('questionCount');if(qc)qc.textContent=slice.length;if(typeof w.render==='function')try{w.render()}catch(e){}if(typeof w.renderQuestions==='function')try{w.renderQuestions()}catch(e){}}if(typeof w.Q!=='undefined'&&Array.isArray(w.Q)){if(!w.__ALL_Q)w.__ALL_Q=[...w.Q];const slice=levelSlice(w.__ALL_Q);try{w.Q.splice(0,w.Q.length,...slice)}catch(e){w.Q=slice}}}
+frame.addEventListener('load',()=>{if(!sid())return;track('book_open',{quiz_mode:'Level '+CURRENT_LEVEL});try{const w=frame.contentWindow,d=frame.contentDocument;applyLevelHooks();if(!hooked){hooked=true;['startQuiz','startFinal','startModule'].forEach(fn=>{try{if(typeof w[fn]==='function'){const old=w[fn];w[fn]=function(){applyLevelHooks();const out=old.apply(this,arguments);try{if(Array.isArray(w.quiz)){w.quiz=levelSlice(w.quiz);w.qi=0;w.score=0;if(typeof w.showQuestion==='function')w.showQuestion()}}catch(e){}return out}}}catch(e){}})}
+let lastKey='',levelCorrect=0,levelAttempts=0;const text=(sel)=>{const el=d.querySelector(sel);return el?(el.textContent||'').trim():''};
+function recordReward(correct){levelAttempts++;if(correct){levelCorrect++;setNum(key('xp'),getNum(key('xp'))+10);setNum(key('streak'),getNum(key('streak'))+1)}else setNum(key('streak'),0);refreshHUD()}
+function finishLevel(totalFromCounter){const total=Number(totalFromCounter)||levelAttempts;if(total<=0)return;const pct=Math.round((levelCorrect/Math.max(levelAttempts,total))*100);const best=Math.max(masteryFor(CURRENT_LEVEL),pct);setNum(key('L'+CURRENT_LEVEL+':mastery'),best);setNum(key('streak'),0);refreshHUD();if(best>=80){setStatus('Level '+CURRENT_LEVEL+' Mastered · '+best+'%'+(CURRENT_LEVEL<4?' · Level '+(CURRENT_LEVEL+1)+' unlocked':' · Final mastery ready'),'ok')}else setStatus('Level '+CURRENT_LEVEL+' '+best+'% · Need 80% to unlock next level','bad')}
+function inspect(answerText=''){const counter=text('#counter');const result=text('#result,.result');const question=text('#prompt,#qPrompt,.prompt,.qprompt')||text('#instruction');const mode=text('#quizTitle,#title,.top b');let correct=null;if(/Incorrect|答错了|Correct answer:/i.test(result))correct=false;else if(/Correct spelling|拼写正确|Correct!|答对了/i.test(result))correct=true;if(correct===null)return;const k=BOOK_NO+'|L'+CURRENT_LEVEL+'|'+counter+'|'+question;if(k===lastKey)return;lastKey=k;recordReward(correct);track('answer',{question_key:k,question_text:question,answer_text:String(answerText||''),is_correct:correct,quiz_mode:mode});const mm=counter.match(/(\d+)\s*\/\s*(\d+)/);if(mm&&Number(mm[1])===Number(mm[2])){finishLevel(mm[2]);track('quiz_complete',{question_key:BOOK_NO+'|L'+CURRENT_LEVEL+'|'+mode+'|'+mm[2],quiz_mode:mode})}}
+d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const inp=d.querySelector('#spellInput,#answerArea input,.textanswer,input.answer');const val=inp?inp.value:(b.textContent||'').trim();setTimeout(()=>inspect(val),180)},true);d.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.repeat)return;const active=d.activeElement;const val=active&&('value' in active)?active.value:'';setTimeout(()=>inspect(val),180)},true);const resultEl=d.querySelector('#result,.result');if(resultEl)new MutationObserver(()=>{const inp=d.querySelector('#spellInput,#answerArea input,.textanswer,input.answer');setTimeout(()=>inspect(inp?inp.value:''),40)}).observe(resultEl,{childList:true,subtree:true,characterData:true})}catch(e){setStatus('Reader hook error: '+e.message,'bad')}});
+</script></body></html>
