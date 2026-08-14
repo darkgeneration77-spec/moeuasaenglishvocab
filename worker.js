@@ -20,13 +20,26 @@ export default {
         const name = String(body.name||'').trim();
         const className = String(body.class_name||'').trim();
         if(!name) return json({error:'Name required'},400);
+        if(!className) return json({error:'Class required'},400);
+
+        const existing = await env.DB.prepare(`SELECT id,name,class_name FROM students
+          WHERE LOWER(TRIM(name))=LOWER(?) AND LOWER(TRIM(class_name))=LOWER(?)
+          ORDER BY created_at ASC LIMIT 1`).bind(name,className).first();
+
+        if(existing){
+          await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(existing.id).run();
+          await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP)
+            ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(existing.id).run();
+          return json({ok:true,id:existing.id,name:existing.name,class_name:existing.class_name,restored:true});
+        }
+
         const id = String(body.id||crypto.randomUUID());
         await env.DB.prepare(`INSERT INTO students(id,name,class_name,last_seen) VALUES(?,?,?,CURRENT_TIMESTAMP)
           ON CONFLICT(id) DO UPDATE SET name=excluded.name,class_name=excluded.class_name,last_seen=CURRENT_TIMESTAMP`)
           .bind(id,name,className).run();
         await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP)
           ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(id).run();
-        return json({ok:true,id,name,class_name:className});
+        return json({ok:true,id,name,class_name:className,restored:false});
       }
 
       if (url.pathname === '/api/event' && request.method === 'POST') {
