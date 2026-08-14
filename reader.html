@@ -22,6 +22,30 @@ frame.addEventListener('load',()=>{
   try{
     const w=frame.contentWindow;
     const d=frame.contentDocument;
+
+    const patch=d.createElement('script');
+    patch.textContent=`
+      (function(){
+        const selector=document.getElementById('qCount');
+        if(selector) selector.remove();
+
+        window.startModule=function(type){
+          const list=QUESTIONS.filter(q=>q.type===type);
+          begin(type+' · Full Mastery Test ('+list.length+' questions)',list);
+        };
+
+        window.startFinal=function(){
+          begin('Final Spelling Test · ALL '+QUESTIONS.length+' Questions',QUESTIONS);
+        };
+
+        const intro=document.querySelector('.intro');
+        if(intro){
+          intro.innerHTML='<b>练习方法：</b>每个 Quiz 必须完成该类型全部题目，系统才计算真实掌握率；Final Test 覆盖全部题目。听写模式先点击发音，再输入完整单词；错题自动进入错题本，订正答对后自动移除。';
+        }
+      })();
+    `;
+    d.body.appendChild(patch);
+
     d.addEventListener('keydown',e=>{
       if(e.key!=='Enter'||e.repeat) return;
       const checkBtn=d.getElementById('checkBtn');
@@ -36,7 +60,7 @@ frame.addEventListener('load',()=>{
         w.checkTyped();
       }
     });
-  }catch(err){console.warn('Book 19 Enter-key handler could not be attached.',err);}
+  }catch(err){console.warn('Book 19 mastery patch could not be attached.',err);}
 });
 
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&['u','s'].includes(k))){e.preventDefault();return false}});
