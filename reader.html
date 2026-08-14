@@ -14,7 +14,31 @@
 <script>
 const params=new URLSearchParams(location.search);const file=params.get('file')||'';
 const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
-if(!allowed.test(file)||file==='index.html'||file==='reader.html'){document.getElementById('label').textContent='Invalid module';document.getElementById('frame').srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';}else{document.getElementById('frame').src=file;document.getElementById('label').textContent=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');}
+const frame=document.getElementById('frame');
+if(!allowed.test(file)||file==='index.html'||file==='reader.html'){document.getElementById('label').textContent='Invalid module';frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';}else{frame.src=file;document.getElementById('label').textContent=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');}
+
+frame.addEventListener('load',()=>{
+  if(!file.includes('Book_19_Spelling_Dictation_Master')) return;
+  try{
+    const w=frame.contentWindow;
+    const d=frame.contentDocument;
+    d.addEventListener('keydown',e=>{
+      if(e.key!=='Enter'||e.repeat) return;
+      const checkBtn=d.getElementById('checkBtn');
+      const nextBtn=d.getElementById('nextBtn');
+      const modal=d.getElementById('modal');
+      if(!modal||modal.classList.contains('hidden')) return;
+      e.preventDefault();
+      if(nextBtn&&!nextBtn.classList.contains('hidden')&&typeof w.nextQuestion==='function'){
+        w.nextQuestion();
+        setTimeout(()=>{const input=d.querySelector('#answerArea input');if(input)input.focus();},0);
+      }else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){
+        w.checkTyped();
+      }
+    });
+  }catch(err){console.warn('Book 19 Enter-key handler could not be attached.',err);}
+});
+
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&['u','s'].includes(k))){e.preventDefault();return false}});
 </script>
 </body></html>
