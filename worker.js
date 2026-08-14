@@ -12,34 +12,54 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null,{headers:cors});
     const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:cors});
     const teacherAllowed=()=>url.searchParams.get('key')==='008';
+    const makeCode=(id)=>'UASA-'+String(id).replace(/-/g,'').slice(0,6).toUpperCase();
     try {
-      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress V2'});
+      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress V2.1'});
 
       if (url.pathname === '/api/student/register' && request.method === 'POST') {
         const body = await request.json();
+        const code = String(body.student_code||'').trim().toUpperCase();
         const name = String(body.name||'').trim();
         const className = String(body.class_name||'').trim();
+
+        if(code){
+          const existingByCode = await env.DB.prepare(`SELECT id,name,class_name,student_code FROM students WHERE UPPER(TRIM(student_code))=? LIMIT 1`).bind(code).first();
+          if(!existingByCode) return json({error:'Student code not found'},404);
+          await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(existingByCode.id).run();
+          await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP)
+            ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(existingByCode.id).run();
+          return json({ok:true,id:existingByCode.id,name:existingByCode.name,class_name:existingByCode.class_name,student_code:existingByCode.student_code,restored:true,login_method:'code'});
+        }
+
         if(!name) return json({error:'Name required'},400);
         if(!className) return json({error:'Class required'},400);
-
-        const existing = await env.DB.prepare(`SELECT id,name,class_name FROM students
-          WHERE LOWER(TRIM(name))=LOWER(?) AND LOWER(TRIM(class_name))=LOWER(?)
-          ORDER BY created_at ASC LIMIT 1`).bind(name,className).first();
-
+        const existing = await env.DB.prepare(`SELECT id,name,class_name,student_code FROM students
+          WHERE LOWER(TRIM(name))=LOWER(?) AND LOWER(TRIM(class_name))=LOWER(?) ORDER BY created_at ASC LIMIT 1`).bind(name,className).first();
         if(existing){
-          await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(existing.id).run();
+          let studentCode=String(existing.student_code||'').trim();
+          if(!studentCode){studentCode=makeCode(existing.id);await env.DB.prepare('UPDATE students SET student_code=?,last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(studentCode,existing.id).run();}
+          else await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(existing.id).run();
           await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP)
             ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(existing.id).run();
-          return json({ok:true,id:existing.id,name:existing.name,class_name:existing.class_name,restored:true});
+          return json({ok:true,id:existing.id,name:existing.name,class_name:existing.class_name,student_code:studentCode,restored:true,login_method:'name_class'});
         }
 
         const id = String(body.id||crypto.randomUUID());
-        await env.DB.prepare(`INSERT INTO students(id,name,class_name,last_seen) VALUES(?,?,?,CURRENT_TIMESTAMP)
-          ON CONFLICT(id) DO UPDATE SET name=excluded.name,class_name=excluded.class_name,last_seen=CURRENT_TIMESTAMP`)
-          .bind(id,name,className).run();
+        const studentCode=makeCode(id);
+        await env.DB.prepare(`INSERT INTO students(id,name,class_name,student_code,last_seen) VALUES(?,?,?,?,CURRENT_TIMESTAMP)
+          ON CONFLICT(id) DO UPDATE SET name=excluded.name,class_name=excluded.class_name,student_code=CASE WHEN students.student_code='' THEN excluded.student_code ELSE students.student_code END,last_seen=CURRENT_TIMESTAMP`)
+          .bind(id,name,className,studentCode).run();
         await env.DB.prepare(`INSERT INTO student_progress(student_id,updated_at) VALUES(?,CURRENT_TIMESTAMP)
           ON CONFLICT(student_id) DO UPDATE SET updated_at=CURRENT_TIMESTAMP`).bind(id).run();
-        return json({ok:true,id,name,class_name:className,restored:false});
+        return json({ok:true,id,name,class_name:className,student_code:studentCode,restored:false,login_method:'new'});
+      }
+
+      if (url.pathname === '/api/student/lookup' && request.method === 'GET') {
+        const code=String(url.searchParams.get('student_code')||'').trim().toUpperCase();
+        if(!code) return json({error:'student_code required'},400);
+        const student=await env.DB.prepare(`SELECT id,name,class_name,student_code,last_seen FROM students WHERE UPPER(TRIM(student_code))=? LIMIT 1`).bind(code).first();
+        if(!student) return json({error:'Student code not found'},404);
+        return json({student});
       }
 
       if (url.pathname === '/api/event' && request.method === 'POST') {
@@ -57,38 +77,19 @@ export default {
         const b = await request.json();
         const studentId=String(b.student_id||'');
         if(!studentId) return json({error:'student_id required'},400);
-        const xp=Math.max(0,Number(b.total_xp||0));
-        const currentStreak=Math.max(0,Number(b.current_streak||0));
-        const bestStreak=Math.max(0,Number(b.best_streak||0));
-        const booksStarted=Math.max(0,Number(b.books_started||0));
-        const booksMastered=Math.max(0,Number(b.books_mastered||0));
+        const xp=Math.max(0,Number(b.total_xp||0)), currentStreak=Math.max(0,Number(b.current_streak||0)), bestStreak=Math.max(0,Number(b.best_streak||0)), booksStarted=Math.max(0,Number(b.books_started||0)), booksMastered=Math.max(0,Number(b.books_mastered||0));
         await env.DB.prepare(`INSERT INTO student_progress(student_id,total_xp,current_streak,best_streak,books_started,books_mastered,updated_at)
           VALUES(?,?,?,?,?,?,CURRENT_TIMESTAMP)
-          ON CONFLICT(student_id) DO UPDATE SET
-            total_xp=MAX(student_progress.total_xp,excluded.total_xp),
-            current_streak=excluded.current_streak,
-            best_streak=MAX(student_progress.best_streak,excluded.best_streak),
-            books_started=MAX(student_progress.books_started,excluded.books_started),
-            books_mastered=MAX(student_progress.books_mastered,excluded.books_mastered),
-            updated_at=CURRENT_TIMESTAMP`)
+          ON CONFLICT(student_id) DO UPDATE SET total_xp=MAX(student_progress.total_xp,excluded.total_xp),current_streak=excluded.current_streak,best_streak=MAX(student_progress.best_streak,excluded.best_streak),books_started=MAX(student_progress.books_started,excluded.books_started),books_mastered=MAX(student_progress.books_mastered,excluded.books_mastered),updated_at=CURRENT_TIMESTAMP`)
           .bind(studentId,xp,currentStreak,bestStreak,booksStarted,booksMastered).run();
         if(b.book_no && b.level_no){
           const bookNo=Number(b.book_no),levelNo=Number(b.level_no),mastery=Math.max(0,Math.min(100,Number(b.mastery||0))),attempts=Math.max(0,Number(b.attempts||0)),correct=Math.max(0,Number(b.correct||0)),unlocked=b.unlocked?1:0,mastered=b.mastered?1:(mastery>=80?1:0);
           await env.DB.prepare(`INSERT INTO level_mastery(student_id,book_no,level_no,mastery,attempts,correct,unlocked,mastered,updated_at)
             VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-            ON CONFLICT(student_id,book_no,level_no) DO UPDATE SET
-              mastery=MAX(level_mastery.mastery,excluded.mastery),
-              attempts=MAX(level_mastery.attempts,excluded.attempts),
-              correct=MAX(level_mastery.correct,excluded.correct),
-              unlocked=MAX(level_mastery.unlocked,excluded.unlocked),
-              mastered=MAX(level_mastery.mastered,excluded.mastered),
-              updated_at=CURRENT_TIMESTAMP`)
+            ON CONFLICT(student_id,book_no,level_no) DO UPDATE SET mastery=MAX(level_mastery.mastery,excluded.mastery),attempts=MAX(level_mastery.attempts,excluded.attempts),correct=MAX(level_mastery.correct,excluded.correct),unlocked=MAX(level_mastery.unlocked,excluded.unlocked),mastered=MAX(level_mastery.mastered,excluded.mastered),updated_at=CURRENT_TIMESTAMP`)
             .bind(studentId,bookNo,levelNo,mastery,attempts,correct,unlocked,mastered).run();
-          if(mastered && levelNo<4){
-            await env.DB.prepare(`INSERT INTO level_mastery(student_id,book_no,level_no,unlocked,updated_at) VALUES(?,?,?,?,CURRENT_TIMESTAMP)
-              ON CONFLICT(student_id,book_no,level_no) DO UPDATE SET unlocked=1,updated_at=CURRENT_TIMESTAMP`)
-              .bind(studentId,bookNo,levelNo+1,1).run();
-          }
+          if(mastered && levelNo<4){await env.DB.prepare(`INSERT INTO level_mastery(student_id,book_no,level_no,unlocked,updated_at) VALUES(?,?,?,?,CURRENT_TIMESTAMP)
+            ON CONFLICT(student_id,book_no,level_no) DO UPDATE SET unlocked=1,updated_at=CURRENT_TIMESTAMP`).bind(studentId,bookNo,levelNo+1,1).run();}
         }
         return json({ok:true});
       }
@@ -108,12 +109,10 @@ export default {
         const studentId=String(b.student_id||''),group=String(b.boss_group||'');
         if(!studentId||!group) return json({error:'student_id and boss_group required'},400);
         const from=Number(b.books_from||0),to=Number(b.books_to||0),score=Math.max(0,Number(b.score||0)),total=Math.max(0,Number(b.total||0));
-        const pct=total?Math.round(score/total*100):Math.max(0,Number(b.percentage||0));
-        const passed=pct>=80?1:0;
+        const pct=total?Math.round(score/total*100):Math.max(0,Number(b.percentage||0)),passed=pct>=80?1:0;
         await env.DB.prepare(`INSERT INTO boss_results(student_id,boss_group,books_from,books_to,score,total,percentage,passed,attempts,best_percentage,updated_at)
           VALUES(?,?,?,?,?,?,?,?,1,?,CURRENT_TIMESTAMP)
-          ON CONFLICT(student_id,boss_group) DO UPDATE SET
-            score=excluded.score,total=excluded.total,percentage=excluded.percentage,passed=MAX(boss_results.passed,excluded.passed),attempts=boss_results.attempts+1,best_percentage=MAX(boss_results.best_percentage,excluded.percentage),updated_at=CURRENT_TIMESTAMP`)
+          ON CONFLICT(student_id,boss_group) DO UPDATE SET score=excluded.score,total=excluded.total,percentage=excluded.percentage,passed=MAX(boss_results.passed,excluded.passed),attempts=boss_results.attempts+1,best_percentage=MAX(boss_results.best_percentage,excluded.percentage),updated_at=CURRENT_TIMESTAMP`)
           .bind(studentId,group,from,to,score,total,pct,passed,pct).run();
         return json({ok:true,percentage:pct,passed:!!passed});
       }
@@ -122,26 +121,17 @@ export default {
         const b=await request.json();
         const studentId=String(b.student_id||''),key=String(b.achievement_key||''),name=String(b.achievement_name||key);
         if(!studentId||!key) return json({error:'student_id and achievement_key required'},400);
-        await env.DB.prepare(`INSERT INTO achievements(student_id,achievement_key,achievement_name,unlocked,unlocked_at)
-          VALUES(?,?,?,1,CURRENT_TIMESTAMP)
-          ON CONFLICT(student_id,achievement_key) DO UPDATE SET achievement_name=excluded.achievement_name,unlocked=1`)
-          .bind(studentId,key,name).run();
+        await env.DB.prepare(`INSERT INTO achievements(student_id,achievement_key,achievement_name,unlocked,unlocked_at) VALUES(?,?,?,1,CURRENT_TIMESTAMP)
+          ON CONFLICT(student_id,achievement_key) DO UPDATE SET achievement_name=excluded.achievement_name,unlocked=1`).bind(studentId,key,name).run();
         return json({ok:true});
       }
 
       if (url.pathname === '/api/student/summary' && request.method === 'GET') {
-        const id = url.searchParams.get('student_id');
+        const id=url.searchParams.get('student_id');
         if(!id) return json({error:'student_id required'},400);
-        const student = await env.DB.prepare('SELECT * FROM students WHERE id=?').bind(id).first();
-        const books = await env.DB.prepare(`SELECT book_no,MAX(book_title) book_title,
-          SUM(CASE WHEN event_type='answer' THEN 1 ELSE 0 END) attempts,
-          SUM(CASE WHEN event_type='answer' AND is_correct=1 THEN 1 ELSE 0 END) correct,
-          SUM(CASE WHEN event_type='answer' AND is_correct=0 THEN 1 ELSE 0 END) wrong,
-          SUM(CASE WHEN event_type='quiz_complete' THEN 1 ELSE 0 END) quizzes_completed,
-          MAX(created_at) last_activity
-          FROM learning_events WHERE student_id=? GROUP BY book_no ORDER BY book_no`).bind(id).all();
-        const recent = await env.DB.prepare(`SELECT id,book_no,book_title,event_type,question_key,question_text,answer_text,correct_answer,is_correct,recovered,quiz_mode,created_at
-          FROM learning_events WHERE student_id=? ORDER BY id DESC LIMIT 300`).bind(id).all();
+        const student=await env.DB.prepare('SELECT id,name,class_name,student_code,created_at,last_seen FROM students WHERE id=?').bind(id).first();
+        const books=await env.DB.prepare(`SELECT book_no,MAX(book_title) book_title,SUM(CASE WHEN event_type='answer' THEN 1 ELSE 0 END) attempts,SUM(CASE WHEN event_type='answer' AND is_correct=1 THEN 1 ELSE 0 END) correct,SUM(CASE WHEN event_type='answer' AND is_correct=0 THEN 1 ELSE 0 END) wrong,SUM(CASE WHEN event_type='quiz_complete' THEN 1 ELSE 0 END) quizzes_completed,MAX(created_at) last_activity FROM learning_events WHERE student_id=? GROUP BY book_no ORDER BY book_no`).bind(id).all();
+        const recent=await env.DB.prepare(`SELECT id,book_no,book_title,event_type,question_key,question_text,answer_text,correct_answer,is_correct,recovered,quiz_mode,created_at FROM learning_events WHERE student_id=? ORDER BY id DESC LIMIT 300`).bind(id).all();
         const progress=await env.DB.prepare('SELECT * FROM student_progress WHERE student_id=?').bind(id).first();
         const levels=await env.DB.prepare('SELECT * FROM level_mastery WHERE student_id=? ORDER BY book_no,level_no').bind(id).all();
         const bosses=await env.DB.prepare('SELECT * FROM boss_results WHERE student_id=? ORDER BY books_from').bind(id).all();
@@ -151,36 +141,17 @@ export default {
 
       if (url.pathname === '/api/teacher/students' && request.method === 'GET') {
         if(!teacherAllowed()) return json({error:'Unauthorized'},401);
-        const rows = await env.DB.prepare(`SELECT s.id,s.name,s.class_name,s.last_seen,
-          COUNT(CASE WHEN e.event_type='answer' THEN 1 END) attempts,
-          SUM(CASE WHEN e.event_type='answer' AND e.is_correct=1 THEN 1 ELSE 0 END) correct,
-          SUM(CASE WHEN e.event_type='answer' AND e.is_correct=0 THEN 1 ELSE 0 END) wrong,
-          COUNT(DISTINCT e.book_no) books_started,
-          MAX(e.created_at) last_activity,
-          COALESCE(p.total_xp,0) total_xp,
-          COALESCE(p.best_streak,0) best_streak,
-          COALESCE(p.books_mastered,0) books_mastered
-          FROM students s
-          LEFT JOIN learning_events e ON e.student_id=s.id
-          LEFT JOIN student_progress p ON p.student_id=s.id
-          GROUP BY s.id ORDER BY COALESCE(last_activity,s.last_seen) DESC`).all();
+        const rows=await env.DB.prepare(`SELECT s.id,s.name,s.class_name,s.student_code,s.last_seen,COUNT(CASE WHEN e.event_type='answer' THEN 1 END) attempts,SUM(CASE WHEN e.event_type='answer' AND e.is_correct=1 THEN 1 ELSE 0 END) correct,SUM(CASE WHEN e.event_type='answer' AND e.is_correct=0 THEN 1 ELSE 0 END) wrong,COUNT(DISTINCT e.book_no) books_started,MAX(e.created_at) last_activity,COALESCE(p.total_xp,0) total_xp,COALESCE(p.best_streak,0) best_streak,COALESCE(p.books_mastered,0) books_mastered FROM students s LEFT JOIN learning_events e ON e.student_id=s.id LEFT JOIN student_progress p ON p.student_id=s.id GROUP BY s.id ORDER BY COALESCE(last_activity,s.last_seen) DESC`).all();
         return json({students:rows.results||[]});
       }
 
       if (url.pathname === '/api/teacher/student' && request.method === 'GET') {
         if(!teacherAllowed()) return json({error:'Unauthorized'},401);
-        const id = url.searchParams.get('student_id');
+        const id=url.searchParams.get('student_id');
         if(!id) return json({error:'student_id required'},400);
-        const student = await env.DB.prepare('SELECT * FROM students WHERE id=?').bind(id).first();
-        const books = await env.DB.prepare(`SELECT book_no,MAX(book_title) book_title,
-          SUM(CASE WHEN event_type='answer' THEN 1 ELSE 0 END) attempts,
-          SUM(CASE WHEN event_type='answer' AND is_correct=1 THEN 1 ELSE 0 END) correct,
-          SUM(CASE WHEN event_type='answer' AND is_correct=0 THEN 1 ELSE 0 END) wrong,
-          SUM(CASE WHEN event_type='quiz_complete' THEN 1 ELSE 0 END) quizzes_completed,
-          MAX(created_at) last_activity
-          FROM learning_events WHERE student_id=? GROUP BY book_no ORDER BY book_no`).bind(id).all();
-        const wrongItems = await env.DB.prepare(`SELECT id,book_no,book_title,question_key,question_text,answer_text,correct_answer,recovered,quiz_mode,created_at
-          FROM learning_events WHERE student_id=? AND event_type='answer' AND is_correct=0 ORDER BY id DESC LIMIT 500`).bind(id).all();
+        const student=await env.DB.prepare('SELECT id,name,class_name,student_code,created_at,last_seen FROM students WHERE id=?').bind(id).first();
+        const books=await env.DB.prepare(`SELECT book_no,MAX(book_title) book_title,SUM(CASE WHEN event_type='answer' THEN 1 ELSE 0 END) attempts,SUM(CASE WHEN event_type='answer' AND is_correct=1 THEN 1 ELSE 0 END) correct,SUM(CASE WHEN event_type='answer' AND is_correct=0 THEN 1 ELSE 0 END) wrong,SUM(CASE WHEN event_type='quiz_complete' THEN 1 ELSE 0 END) quizzes_completed,MAX(created_at) last_activity FROM learning_events WHERE student_id=? GROUP BY book_no ORDER BY book_no`).bind(id).all();
+        const wrongItems=await env.DB.prepare(`SELECT id,book_no,book_title,question_key,question_text,answer_text,correct_answer,recovered,quiz_mode,created_at FROM learning_events WHERE student_id=? AND event_type='answer' AND is_correct=0 ORDER BY id DESC LIMIT 500`).bind(id).all();
         const progress=await env.DB.prepare('SELECT * FROM student_progress WHERE student_id=?').bind(id).first();
         const levels=await env.DB.prepare('SELECT * FROM level_mastery WHERE student_id=? ORDER BY book_no,level_no').bind(id).all();
         const bosses=await env.DB.prepare('SELECT * FROM boss_results WHERE student_id=? ORDER BY books_from').bind(id).all();
@@ -190,7 +161,7 @@ export default {
 
       return json({error:'Not found'},404);
     } catch (err) {
-      return json({error:String(err && err.message || err)},500);
+      return json({error:String(err&&err.message||err)},500);
     }
   }
 };
