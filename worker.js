@@ -5,14 +5,15 @@ export default {
     const cors = {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type,X-Teacher-Key',
+      'Access-Control-Allow-Headers': 'Content-Type',
       'Vary': 'Origin',
       'Content-Type': 'application/json; charset=utf-8'
     };
     if (request.method === 'OPTIONS') return new Response(null,{headers:cors});
     const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:cors});
+    const teacherAllowed=()=>url.searchParams.get('key')==='008';
     try {
-      if (url.pathname === '/api/health') return json({ok:true});
+      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress'});
 
       if (url.pathname === '/api/student/register' && request.method === 'POST') {
         const body = await request.json();
@@ -30,10 +31,13 @@ export default {
         const b = await request.json();
         if(!b.student_id || !b.book_no || !b.event_type) return json({error:'Missing required fields'},400);
         await env.DB.prepare('UPDATE students SET last_seen=CURRENT_TIMESTAMP WHERE id=?').bind(String(b.student_id)).run();
-        await env.DB.prepare(`INSERT INTO learning_events(student_id,book_no,book_title,event_type,question_key,question_text,answer_text,is_correct,quiz_mode)
-          VALUES(?,?,?,?,?,?,?,?,?)`)
-          .bind(String(b.student_id),Number(b.book_no),String(b.book_title||''),String(b.event_type),String(b.question_key||''),String(b.question_text||''),String(b.answer_text||''),b.is_correct===true?1:b.is_correct===false?0:null,String(b.quiz_mode||''))
-          .run();
+        await env.DB.prepare(`INSERT INTO learning_events(student_id,book_no,book_title,event_type,question_key,question_text,answer_text,correct_answer,is_correct,recovered,quiz_mode)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?)`)
+          .bind(
+            String(b.student_id),Number(b.book_no),String(b.book_title||''),String(b.event_type),
+            String(b.question_key||''),String(b.question_text||''),String(b.answer_text||''),String(b.correct_answer||''),
+            b.is_correct===true?1:b.is_correct===false?0:null,b.recovered===true?1:0,String(b.quiz_mode||'')
+          ).run();
         return json({ok:true});
       }
 
@@ -48,13 +52,13 @@ export default {
           SUM(CASE WHEN event_type='quiz_complete' THEN 1 ELSE 0 END) quizzes_completed,
           MAX(created_at) last_activity
           FROM learning_events WHERE student_id=? GROUP BY book_no ORDER BY book_no`).bind(id).all();
-        const recent = await env.DB.prepare(`SELECT book_no,book_title,event_type,question_text,answer_text,is_correct,quiz_mode,created_at
-          FROM learning_events WHERE student_id=? ORDER BY id DESC LIMIT 50`).bind(id).all();
+        const recent = await env.DB.prepare(`SELECT id,book_no,book_title,event_type,question_key,question_text,answer_text,correct_answer,is_correct,recovered,quiz_mode,created_at
+          FROM learning_events WHERE student_id=? ORDER BY id DESC LIMIT 300`).bind(id).all();
         return json({student,books:books.results||[],recent:recent.results||[]});
       }
 
       if (url.pathname === '/api/teacher/students' && request.method === 'GET') {
-        if(!env.TEACHER_KEY || request.headers.get('X-Teacher-Key') !== env.TEACHER_KEY) return json({error:'Unauthorized'},401);
+        if(!teacherAllowed()) return json({error:'Unauthorized'},401);
         const rows = await env.DB.prepare(`SELECT s.id,s.name,s.class_name,s.last_seen,
           COUNT(CASE WHEN e.event_type='answer' THEN 1 END) attempts,
           SUM(CASE WHEN e.event_type='answer' AND e.is_correct=1 THEN 1 ELSE 0 END) correct,
@@ -67,7 +71,7 @@ export default {
       }
 
       if (url.pathname === '/api/teacher/student' && request.method === 'GET') {
-        if(!env.TEACHER_KEY || request.headers.get('X-Teacher-Key') !== env.TEACHER_KEY) return json({error:'Unauthorized'},401);
+        if(!teacherAllowed()) return json({error:'Unauthorized'},401);
         const id = url.searchParams.get('student_id');
         if(!id) return json({error:'student_id required'},400);
         const student = await env.DB.prepare('SELECT * FROM students WHERE id=?').bind(id).first();
@@ -78,8 +82,8 @@ export default {
           SUM(CASE WHEN event_type='quiz_complete' THEN 1 ELSE 0 END) quizzes_completed,
           MAX(created_at) last_activity
           FROM learning_events WHERE student_id=? GROUP BY book_no ORDER BY book_no`).bind(id).all();
-        const wrongItems = await env.DB.prepare(`SELECT book_no,book_title,question_text,answer_text,quiz_mode,created_at
-          FROM learning_events WHERE student_id=? AND event_type='answer' AND is_correct=0 ORDER BY id DESC LIMIT 200`).bind(id).all();
+        const wrongItems = await env.DB.prepare(`SELECT id,book_no,book_title,question_key,question_text,answer_text,correct_answer,recovered,quiz_mode,created_at
+          FROM learning_events WHERE student_id=? AND event_type='answer' AND is_correct=0 ORDER BY id DESC LIMIT 500`).bind(id).all();
         return json({student,books:books.results||[],wrong_items:wrongItems.results||[]});
       }
 
