@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOE UASA English Reader</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#071522}.bar{height:66px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:linear-gradient(90deg,#081a2c,#12375b);border-bottom:1px solid #2e5778;color:#fff}.links{display:flex;gap:8px;align-items:center}.btn{display:inline-flex;text-decoration:none;color:#fff;background:#1b5f96;border:1px solid #6fc8e5;padding:9px 12px;border-radius:10px;font-weight:800}.meta{text-align:right;min-width:0}.title{font-size:13px;color:#c9deef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.status{font-size:12px;margin-top:4px;color:#ffd166}.status.ok{color:#86efac}.status.bad{color:#fca5a5}.frame{width:100%;height:calc(100% - 66px);border:0;background:#fff}@media(max-width:650px){.bar{height:62px}.frame{height:calc(100% - 62px)}.title{display:none}.btn.dash{display:none}}
+</style>
+</head>
+<body>
+<div class="bar"><div class="links"><a class="btn" href="index.html">← Home</a><a class="btn dash" href="student-dashboard.html">Dashboard</a></div><div class="meta"><div class="title" id="label">Learning Module</div><div class="status" id="sync">Checking student…</div></div></div>
+<iframe id="frame" class="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"></iframe>
+<script>
+const API='https://moe-uasa-english-api.darkgeneration77.workers.dev';
+const p=new URLSearchParams(location.search),file=p.get('file')||'';
+const frame=document.getElementById('frame'),sync=document.getElementById('sync'),label=document.getElementById('label');
+const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
+const sid=()=>localStorage.getItem('uasaStudentId')||'';
+const sname=()=>localStorage.getItem('uasaStudentName')||'';
+const m=file.match(/Book_(\d+)/i),BOOK_NO=m?Number(m[1]):0;
+const BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
+localStorage.setItem('uasaApiBase',API);
+function setStatus(text,type=''){sync.textContent=text;sync.className='status '+type}
+async function track(event_type,extra={}){
+  if(!sid()){setStatus('Not logged in · open Student Dashboard first','bad');return false}
+  if(!BOOK_NO){setStatus('Book number not detected','bad');return false}
+  try{
+    const r=await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid(),book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,...extra})});
+    const text=await r.text();
+    if(!r.ok){setStatus('Sync failed: '+text,'bad');return false}
+    setStatus(event_type==='answer'?'Saved: '+(extra.is_correct?'Correct':'Wrong'):'Tracking active · '+(sname()||'student'),'ok');
+    return true;
+  }catch(e){setStatus('Sync error: '+e.message,'bad');return false}
+}
+if(!allowed.test(file)||file==='index.html'||file==='reader.html'||file==='reader-v2.html'){
+  setStatus('Invalid module','bad');frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';
+}else{frame.src=file;label.textContent=BOOK_TITLE}
+frame.addEventListener('load',()=>{
+  track('book_open');
+  try{
+    const w=frame.contentWindow,d=frame.contentDocument;
+    /* Full mastery: remove 10-question sampling where these books use the common WORDS structure. */
+    try{if(typeof w.startQuiz==='function'&&typeof w.WORDS!=='undefined'){
+      const old=w.startQuiz;w.startQuiz=function(){old.apply(this,arguments);try{let pool=typeof w.getFiltered==='function'?w.getFiltered():w.WORDS;if(!pool||!pool.length)pool=w.WORDS;w.quiz=(typeof w.shuffle==='function'?w.shuffle(pool):[...pool].sort(()=>Math.random()-.5));w.qi=0;w.score=0;if(typeof w.showQuestion==='function')w.showQuestion()}catch(e){}};
+    }}catch(e){}
+    ['qCount','questionCount'].forEach(id=>{const el=d.getElementById(id);if(el)el.remove()});
+
+    let lastKey='';
+    const text=(sel)=>{const el=d.querySelector(sel);return el?(el.textContent||'').trim():''};
+    function inspect(answerText=''){
+      const counter=text('#counter');
+      const result=text('#result,.result');
+      const question=text('#prompt,#qPrompt,.prompt,.qprompt')||text('#instruction');
+      const mode=text('#quizTitle,#title,.top b');
+      let correct=null;
+      if(/Incorrect|答错了|Correct answer:/i.test(result)) correct=false;
+      else if(/Correct spelling|拼写正确|Correct!|答对了/i.test(result)) correct=true;
+      if(correct===null)return;
+      const key=BOOK_NO+'|'+counter+'|'+question;
+      if(key===lastKey)return;lastKey=key;
+      track('answer',{question_key:key,question_text:question,answer_text:String(answerText||''),is_correct:correct,quiz_mode:mode});
+      const mm=counter.match(/(\d+)\s*\/\s*(\d+)/);
+      if(mm&&Number(mm[1])===Number(mm[2]))track('quiz_complete',{question_key:BOOK_NO+'|'+mode+'|'+mm[2],quiz_mode:mode});
+    }
+    d.addEventListener('click',e=>{
+      const b=e.target.closest('button');if(!b)return;
+      const inp=d.querySelector('#spellInput,#answerArea input,.textanswer,input.answer');
+      const val=inp?inp.value:(b.textContent||'').trim();
+      setTimeout(()=>inspect(val),180);
+    },true);
+    d.addEventListener('keydown',e=>{
+      if(e.key!=='Enter'||e.repeat)return;
+      const active=d.activeElement;const val=active&&('value' in active)?active.value:'';
+      setTimeout(()=>inspect(val),180);
+    },true);
+    /* Mutation fallback catches books whose grading runs without a normal button click. */
+    const resultEl=d.querySelector('#result,.result');
+    if(resultEl){new MutationObserver(()=>{const inp=d.querySelector('#spellInput,#answerArea input,.textanswer,input.answer');setTimeout(()=>inspect(inp?inp.value:''),40)}).observe(resultEl,{childList:true,subtree:true,characterData:true});}
+  }catch(e){setStatus('Reader hook error: '+e.message,'bad')}
+});
+</script>
+</body></html>
