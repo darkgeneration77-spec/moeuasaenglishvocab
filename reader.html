@@ -15,52 +15,109 @@
 const params=new URLSearchParams(location.search);const file=params.get('file')||'';
 const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
 const frame=document.getElementById('frame');
-if(!allowed.test(file)||file==='index.html'||file==='reader.html'){document.getElementById('label').textContent='Invalid module';frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';}else{frame.src=file;document.getElementById('label').textContent=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');}
+if(!allowed.test(file)||file==='index.html'||file==='reader.html'){
+  document.getElementById('label').textContent='Invalid module';
+  frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';
+}else{
+  frame.src=file;
+  document.getElementById('label').textContent=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
+}
 
 frame.addEventListener('load',()=>{
-  if(!file.includes('Book_19_Spelling_Dictation_Master')) return;
   try{
     const w=frame.contentWindow;
     const d=frame.contentDocument;
-
     const patch=d.createElement('script');
     patch.textContent=`
       (function(){
-        const selector=document.getElementById('qCount');
-        if(selector) selector.remove();
+        /* Book 1–16 style: WORDS + startQuiz() */
+        try{
+          if(typeof startQuiz==='function' && typeof WORDS!=='undefined' && typeof quiz!=='undefined'){
+            const originalStartQuiz=startQuiz;
+            startQuiz=function(){
+              const args=[...arguments];
+              originalStartQuiz.apply(this,args);
+              let pool=(typeof getFiltered==='function')?getFiltered():WORDS;
+              if(!pool || !pool.length) pool=WORDS;
+              quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);
+              qi=0; score=0;
+              if(typeof showQuestion==='function') showQuestion();
+            };
+          }
+        }catch(e){console.warn('Full quiz patch A failed',e)}
 
-        window.startModule=function(type){
-          const list=QUESTIONS.filter(q=>q.type===type);
-          begin(type+' · Full Mastery Test ('+list.length+' questions)',list);
-        };
+        /* Book 17 / 19 style: QUESTIONS + startModule/startFinal */
+        try{
+          if(typeof QUESTIONS!=='undefined' && typeof quiz!=='undefined'){
+            if(typeof startModule==='function'){
+              const oldStartModule=startModule;
+              startModule=function(type){
+                oldStartModule(type);
+                let pool=(type==='mixed')?QUESTIONS:QUESTIONS.filter(q=>q.type===type);
+                quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);
+                qi=0; score=0;
+                if(typeof showQuestion==='function') showQuestion();
+                else if(typeof show==='function') show();
+              };
+            }
+            if(typeof startFinal==='function'){
+              const oldStartFinal=startFinal;
+              startFinal=function(){
+                oldStartFinal();
+                quiz=(typeof shuffle==='function')?shuffle(QUESTIONS):[...QUESTIONS].sort(()=>Math.random()-.5);
+                qi=0; score=0;
+                if(typeof showQuestion==='function') showQuestion();
+                else if(typeof show==='function') show();
+              };
+            }
+          }
+        }catch(e){console.warn('Full quiz patch B failed',e)}
 
-        window.startFinal=function(){
-          begin('Final Spelling Test · ALL '+QUESTIONS.length+' Questions',QUESTIONS);
-        };
+        /* Book 18 style: Q + randomTest(n) */
+        try{
+          if(typeof randomTest==='function' && typeof Q!=='undefined' && typeof begin==='function'){
+            randomTest=function(n){
+              let pool=Q;
+              if(typeof level!=='undefined' && level && level.value && typeof P!=='undefined'){
+                pool=Q.filter(q=>P[q.pi][1]===level.value);
+              }
+              begin(n>=20?'Final Reading Test · ALL Questions':'Reading Practice · ALL Questions',pool);
+            };
+          }
+        }catch(e){console.warn('Full quiz patch C failed',e)}
 
-        const intro=document.querySelector('.intro');
-        if(intro){
-          intro.innerHTML='<b>练习方法：</b>每个 Quiz 必须完成该类型全部题目，系统才计算真实掌握率；Final Test 覆盖全部题目。听写模式先点击发音，再输入完整单词；错题自动进入错题本，订正答对后自动移除。';
-        }
+        /* Remove question-count selectors that encourage partial testing. */
+        ['qCount','questionCount'].forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});
+        document.querySelectorAll('button').forEach(b=>{
+          const t=(b.textContent||'').trim();
+          if(/Final Test 100/i.test(t)) b.textContent='Final Test · ALL Questions';
+          if(/^Random Practice$/i.test(t)) b.textContent='Full Practice · ALL Questions';
+        });
       })();
     `;
     d.body.appendChild(patch);
 
+    /* Enter = check, Enter again = next, for typed-answer quizzes. */
     d.addEventListener('keydown',e=>{
       if(e.key!=='Enter'||e.repeat) return;
-      const checkBtn=d.getElementById('checkBtn');
-      const nextBtn=d.getElementById('nextBtn');
-      const modal=d.getElementById('modal');
+      const modal=d.querySelector('#modal,#quizModal');
       if(!modal||modal.classList.contains('hidden')) return;
+      const checkBtn=d.getElementById('checkBtn');
+      const nextBtn=d.getElementById('nextBtn')||d.getElementById('next');
+      const active=d.activeElement;
+      const isTextInput=active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA');
+      if(!isTextInput && (!nextBtn||nextBtn.classList.contains('hidden'))) return;
       e.preventDefault();
       if(nextBtn&&!nextBtn.classList.contains('hidden')&&typeof w.nextQuestion==='function'){
         w.nextQuestion();
-        setTimeout(()=>{const input=d.querySelector('#answerArea input');if(input)input.focus();},0);
+        setTimeout(()=>{const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer');if(input)input.focus();},0);
       }else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){
         w.checkTyped();
+      }else if(typeof w.checkSpelling==='function'){
+        w.checkSpelling();
       }
     });
-  }catch(err){console.warn('Book 19 mastery patch could not be attached.',err);}
+  }catch(err){console.warn('Full mastery patch could not be attached.',err);}
 });
 
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&['u','s'].includes(k))){e.preventDefault();return false}});
