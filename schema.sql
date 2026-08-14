@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS learning_events (
   question_key TEXT DEFAULT '',
   question_text TEXT DEFAULT '',
   answer_text TEXT DEFAULT '',
+  correct_answer TEXT DEFAULT '',
   is_correct INTEGER,
+  recovered INTEGER DEFAULT 0,
   quiz_mode TEXT DEFAULT '',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(student_id) REFERENCES students(id)
