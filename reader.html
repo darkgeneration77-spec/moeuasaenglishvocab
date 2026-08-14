@@ -78,6 +78,81 @@ frame.addEventListener('load',()=>{
 
     let lastRecorded='';let completedKey='';
     function txt(sel){const el=d.querySelector(sel);return el?(el.textContent||'').trim():''}
+    function recordDirect(correct,answerText='',questionText=''){
+      const counter=txt('#counter');
+      const question=questionText||txt('#prompt,#qPrompt,.prompt,.qprompt')||txt('#instruction');
+      const title=txt('#quizTitle,#title,.top b');
+      const key=BOOK_NO+'|'+counter+'|'+question;
+      if(key===lastRecorded)return;
+      lastRecorded=key;
+      track('answer',{question_key:key,question_text:question,answer_text:String(answerText||''),is_correct:!!correct,quiz_mode:title});
+      const m=counter.match(/(?:Question\s*)?(\d+)\s*\/\s*(\d+)/i);
+      if(m&&Number(m[1])===Number(m[2])){
+        const ck=BOOK_NO+'|'+title+'|'+m[2];
+        if(ck!==completedKey){completedKey=ck;track('quiz_complete',{quiz_mode:title,question_key:ck});}
+      }
+    }
+
+    /* Direct hooks: record the answer at the exact moment the book grades it. */
+    if(typeof w.checkMeaning==='function'){
+      const old=w.checkMeaning;
+      w.checkMeaning=function(btn,ok,item){
+        const ans=btn?(btn.textContent||'').trim():'';
+        const q=item&&item.en?item.en:txt('#prompt');
+        const out=old.apply(this,arguments);
+        recordDirect(!!ok,ans,q);
+        return out;
+      };
+    }
+    if(typeof w.checkSpelling==='function'){
+      const old=w.checkSpelling;
+      w.checkSpelling=function(){
+        const input=d.getElementById('spellInput')||d.querySelector('#answerArea input,.textanswer,input.answer');
+        const ans=input?input.value.trim():'';
+        let expected='',q=txt('#prompt');
+        try{if(w.quiz&&typeof w.qi!=='undefined'&&w.quiz[w.qi])expected=String(w.quiz[w.qi].en||w.quiz[w.qi].word||w.quiz[w.qi].answer||'').trim();}catch(e){}
+        const out=old.apply(this,arguments);
+        const result=txt('#result,.result');
+        const correct=expected?ans.toLowerCase()===expected.toLowerCase():/Correct spelling|Correct!|答对了|拼写正确/i.test(result);
+        recordDirect(correct,ans,q);
+        return out;
+      };
+    }
+    if(typeof w.answer==='function'){
+      const old=w.answer;
+      w.answer=function(btn,ok,item){
+        const ans=btn?(btn.textContent||'').trim():'';
+        const q=(item&&(item.base||item.en||item.term||item.basic))||txt('#prompt,#qPrompt');
+        const out=old.apply(this,arguments);
+        recordDirect(!!ok,ans,q);
+        return out;
+      };
+    }
+    if(typeof w.grade==='function'){
+      const old=w.grade;
+      w.grade=function(btn,val){
+        let expected='';
+        try{expected=w.current&&w.current.answer!==undefined?String(w.current.answer):'';}catch(e){}
+        const out=old.apply(this,arguments);
+        const result=txt('#result,.result');
+        const correct=expected?String(val)===expected:/Correct!|答对了/i.test(result);
+        recordDirect(correct,String(val||''),txt('#qPrompt,#prompt'));
+        return out;
+      };
+    }
+    if(typeof w.checkTyped==='function'){
+      const old=w.checkTyped;
+      w.checkTyped=function(){
+        const input=d.querySelector('#answerArea input,.textanswer,input.answer');
+        const ans=input?input.value.trim():'';
+        const out=old.apply(this,arguments);
+        const result=txt('#result,.result');
+        const correct=/Correct!|答对了|拼写正确/i.test(result)&&!/Incorrect|答错了|Correct answer:/i.test(result);
+        recordDirect(correct,ans,txt('#qPrompt,#prompt'));
+        return out;
+      };
+    }
+
     function inspectAnswer(clicked,capturedInput){
       const counter=txt('#counter');
       const question=txt('#prompt,#qPrompt,.prompt,.qprompt')||txt('#instruction');
@@ -86,7 +161,7 @@ frame.addEventListener('load',()=>{
       let correct=null;
       if(clicked&&clicked.classList.contains('correct'))correct=true;
       else if(clicked&&clicked.classList.contains('wrong'))correct=false;
-      else if(/Correct!|答对了/i.test(result))correct=true;
+      else if(/Correct!|答对了|Correct spelling|拼写正确/i.test(result)&&!/Incorrect|答错了|Correct answer:/i.test(result))correct=true;
       else if(/Incorrect|答错了|Correct answer:/i.test(result))correct=false;
       if(correct===null)return;
       const key=BOOK_NO+'|'+counter+'|'+question;
@@ -102,7 +177,7 @@ frame.addEventListener('load',()=>{
       const b=e.target.closest('button');if(!b)return;
       const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer,input.answer');
       const captured=input?input.value:'';
-      setTimeout(()=>inspectAnswer(b,captured),80);
+      setTimeout(()=>inspectAnswer(b,captured),100);
     },true);
 
     d.addEventListener('keydown',e=>{
@@ -112,8 +187,8 @@ frame.addEventListener('load',()=>{
       const isTextInput=active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA');if(!isTextInput&&(!nextBtn||nextBtn.classList.contains('hidden')))return;
       e.preventDefault();
       if(nextBtn&&!nextBtn.classList.contains('hidden')&&typeof w.nextQuestion==='function'){w.nextQuestion();setTimeout(()=>{const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer');if(input)input.focus();},0);}
-      else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){const v=active&&active.value||'';w.checkTyped();setTimeout(()=>inspectAnswer(checkBtn,v),80);}
-      else if(typeof w.checkSpelling==='function'){const v=active&&active.value||'';w.checkSpelling();setTimeout(()=>inspectAnswer(checkBtn||active,v),80);}
+      else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){w.checkTyped();}
+      else if(typeof w.checkSpelling==='function'){w.checkSpelling();}
     });
   }catch(err){console.warn('Reader patch could not be attached.',err);}
 });
