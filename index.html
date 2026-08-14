@@ -69,7 +69,7 @@ const books=[
 {n:26,t:'Final Booster',d:'60-question full weakness-repair practice.',f:'MOE_UASA_English_Book_26_Full_60_Questions_FIXED.html',p:'exam',fixed:true}
 ];
 const grid=document.getElementById('grid');
-function readerUrl(file){return 'reader.html?file='+encodeURIComponent(file)}
+function readerUrl(file){return 'reader-v2.html?file='+encodeURIComponent(file)}
 function render(){const q=document.getElementById('search').value.toLowerCase().trim();const phase=document.getElementById('phase').value;grid.innerHTML='';books.filter(b=>(phase==='all'||b.p===phase)&&(!q||('book '+b.n+' '+b.t+' '+b.d).toLowerCase().includes(q))).forEach(b=>{const el=document.createElement('article');el.className='book';el.innerHTML=`${b.fixed?'<div class="tag">LATEST</div>':''}<div class="num">Book ${String(b.n).padStart(2,'0')}</div><h3>${b.t}</h3><p>${b.d}</p><a class="open" href="${readerUrl(b.f)}"><span>Open Book</span><span>→</span></a>`;grid.appendChild(el)});}
 document.getElementById('search').addEventListener('input',render);document.getElementById('phase').addEventListener('change',render);render();
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&['u','s'].includes(k))){e.preventDefault();return false}});document.addEventListener('dragstart',e=>e.preventDefault());
