@@ -14,7 +14,7 @@ export default {
     const teacherAllowed=()=>url.searchParams.get('key')==='008';
     const makeCode=(id)=>'UASA-'+String(id).replace(/-/g,'').slice(0,6).toUpperCase();
     try {
-      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress V2.2'});
+      if (url.pathname === '/api/health') return json({ok:true,system:'MOE UASA English Progress V2.3'});
 
       if (url.pathname === '/api/student/register' && request.method === 'POST') {
         const body=await request.json(),code=String(body.student_code||'').trim().toUpperCase(),name=String(body.name||'').trim(),className=String(body.class_name||'').trim();
@@ -76,6 +76,23 @@ export default {
         const bosses=await env.DB.prepare('SELECT * FROM boss_results WHERE student_id=? ORDER BY books_from').bind(id).all();
         const achievements=await env.DB.prepare('SELECT * FROM achievements WHERE student_id=? ORDER BY unlocked_at').bind(id).all();
         return json({progress:progress||null,levels:levels.results||[],bosses:bosses.results||[],achievements:achievements.results||[]});
+      }
+
+      if (url.pathname === '/api/leaderboard' && request.method === 'GET') {
+        const studentId=String(url.searchParams.get('student_id')||'');
+        if(!studentId) return json({error:'student_id required'},400);
+        const rows=await env.DB.prepare(`SELECT s.id,s.name,s.class_name,s.student_code,COALESCE(p.total_xp,0) total_xp,COALESCE(p.best_streak,0) best_streak,COALESCE(p.books_mastered,0) books_mastered FROM students s LEFT JOIN student_progress p ON p.student_id=s.id ORDER BY total_xp DESC,best_streak DESC,s.name COLLATE NOCASE ASC`).all();
+        const list=(rows.results||[]).map((x,i)=>({...x,rank:i+1,total_xp:Number(x.total_xp||0),best_streak:Number(x.best_streak||0),books_mastered:Number(x.books_mastered||0)}));
+        const idx=list.findIndex(x=>String(x.id)===studentId);
+        if(idx<0) return json({error:'Student not found'},404);
+        const me=list[idx];
+        const start=Math.max(0,idx-2),end=Math.min(list.length,idx+3);
+        const nearby=list.slice(start,end);
+        const above=idx>0?list[idx-1]:null;
+        const below=idx<list.length-1?list[idx+1]:null;
+        let rival=null;
+        if(above&&below){const da=Math.abs(Number(above.total_xp)-Number(me.total_xp)),db=Math.abs(Number(below.total_xp)-Number(me.total_xp));rival=da<=db?above:below}else rival=above||below;
+        return json({leaderboard:nearby,my_rank:me.rank,me,rival,total_students:list.length});
       }
 
       if (url.pathname === '/api/boss/save' && request.method === 'POST') {
