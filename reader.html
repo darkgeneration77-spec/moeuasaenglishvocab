@@ -5,119 +5,116 @@
 <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
 <title>MOE UASA English Reader</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#071522}.bar{height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:linear-gradient(90deg,#081a2c,#12375b);border-bottom:1px solid #2e5778;color:white}.home{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:white;background:#1b5f96;border:1px solid #6fc8e5;padding:10px 14px;border-radius:11px;font-weight:800}.title{font-size:14px;color:#c9deef;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.frame{width:100%;height:calc(100% - 58px);border:0;background:white}@media(max-width:600px){.bar{height:54px}.frame{height:calc(100% - 54px)}.title{display:none}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#071522}.bar{height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:linear-gradient(90deg,#081a2c,#12375b);border-bottom:1px solid #2e5778;color:white}.home,.dash{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:white;background:#1b5f96;border:1px solid #6fc8e5;padding:10px 14px;border-radius:11px;font-weight:800}.links{display:flex;gap:8px}.title{font-size:14px;color:#c9deef;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.frame{width:100%;height:calc(100% - 58px);border:0;background:white}@media(max-width:600px){.bar{height:54px}.frame{height:calc(100% - 54px)}.title{display:none}.dash{display:none}}
 </style>
 </head>
 <body oncontextmenu="return false">
-<div class="bar"><a class="home" href="index.html">← Home</a><div class="title" id="label">MOE UASA English Learning Module</div></div>
+<div class="bar"><div class="links"><a class="home" href="index.html">← Home</a><a class="dash" href="student-dashboard.html">Dashboard</a></div><div class="title" id="label">MOE UASA English Learning Module</div></div>
 <iframe id="frame" class="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"></iframe>
 <script>
 const params=new URLSearchParams(location.search);const file=params.get('file')||'';
 const allowed=/^[A-Za-z0-9_().%\-]+\.html$/;
 const frame=document.getElementById('frame');
+const API=localStorage.getItem('uasaApiBase')||'';
+const studentId=()=>localStorage.getItem('uasaStudentId')||'';
+const bookMatch=file.match(/Book_(\d+)/i);const BOOK_NO=bookMatch?Number(bookMatch[1]):0;
+const BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
+async function track(event_type,extra={}){
+  const sid=studentId();if(!sid||!BOOK_NO)return;
+  const payload={student_id:sid,book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,...extra};
+  try{await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}catch(e){}
+}
 if(!allowed.test(file)||file==='index.html'||file==='reader.html'){
   document.getElementById('label').textContent='Invalid module';
   frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';
 }else{
   frame.src=file;
-  document.getElementById('label').textContent=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
+  document.getElementById('label').textContent=BOOK_TITLE;
 }
 
 frame.addEventListener('load',()=>{
+  track('book_open');
   try{
     const w=frame.contentWindow;
     const d=frame.contentDocument;
     const patch=d.createElement('script');
     patch.textContent=`
       (function(){
-        /* Book 1–16 style: WORDS + startQuiz() */
         try{
           if(typeof startQuiz==='function' && typeof WORDS!=='undefined' && typeof quiz!=='undefined'){
             const originalStartQuiz=startQuiz;
             startQuiz=function(){
-              const args=[...arguments];
-              originalStartQuiz.apply(this,args);
+              const args=[...arguments];originalStartQuiz.apply(this,args);
               let pool=(typeof getFiltered==='function')?getFiltered():WORDS;
-              if(!pool || !pool.length) pool=WORDS;
+              if(!pool||!pool.length)pool=WORDS;
               quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);
-              qi=0; score=0;
-              if(typeof showQuestion==='function') showQuestion();
+              qi=0;score=0;if(typeof showQuestion==='function')showQuestion();
             };
           }
-        }catch(e){console.warn('Full quiz patch A failed',e)}
-
-        /* Book 17 / 19 style: QUESTIONS + startModule/startFinal */
+        }catch(e){}
         try{
-          if(typeof QUESTIONS!=='undefined' && typeof quiz!=='undefined'){
+          if(typeof QUESTIONS!=='undefined'&&typeof quiz!=='undefined'){
             if(typeof startModule==='function'){
               const oldStartModule=startModule;
-              startModule=function(type){
-                oldStartModule(type);
-                let pool=(type==='mixed')?QUESTIONS:QUESTIONS.filter(q=>q.type===type);
-                quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);
-                qi=0; score=0;
-                if(typeof showQuestion==='function') showQuestion();
-                else if(typeof show==='function') show();
-              };
+              startModule=function(type){oldStartModule(type);let pool=(type==='mixed')?QUESTIONS:QUESTIONS.filter(q=>q.type===type);quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);qi=0;score=0;if(typeof showQuestion==='function')showQuestion();else if(typeof show==='function')show();};
             }
             if(typeof startFinal==='function'){
               const oldStartFinal=startFinal;
-              startFinal=function(){
-                oldStartFinal();
-                quiz=(typeof shuffle==='function')?shuffle(QUESTIONS):[...QUESTIONS].sort(()=>Math.random()-.5);
-                qi=0; score=0;
-                if(typeof showQuestion==='function') showQuestion();
-                else if(typeof show==='function') show();
-              };
+              startFinal=function(){oldStartFinal();quiz=(typeof shuffle==='function')?shuffle(QUESTIONS):[...QUESTIONS].sort(()=>Math.random()-.5);qi=0;score=0;if(typeof showQuestion==='function')showQuestion();else if(typeof show==='function')show();};
             }
           }
-        }catch(e){console.warn('Full quiz patch B failed',e)}
-
-        /* Book 18 style: Q + randomTest(n) */
+        }catch(e){}
         try{
-          if(typeof randomTest==='function' && typeof Q!=='undefined' && typeof begin==='function'){
-            randomTest=function(n){
-              let pool=Q;
-              if(typeof level!=='undefined' && level && level.value && typeof P!=='undefined'){
-                pool=Q.filter(q=>P[q.pi][1]===level.value);
-              }
-              begin(n>=20?'Final Reading Test · ALL Questions':'Reading Practice · ALL Questions',pool);
-            };
+          if(typeof randomTest==='function'&&typeof Q!=='undefined'&&typeof begin==='function'){
+            randomTest=function(n){let pool=Q;if(typeof level!=='undefined'&&level&&level.value&&typeof P!=='undefined')pool=Q.filter(q=>P[q.pi][1]===level.value);begin(n>=20?'Final Reading Test · ALL Questions':'Reading Practice · ALL Questions',pool);};
           }
-        }catch(e){console.warn('Full quiz patch C failed',e)}
-
-        /* Remove question-count selectors that encourage partial testing. */
+        }catch(e){}
         ['qCount','questionCount'].forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});
-        document.querySelectorAll('button').forEach(b=>{
-          const t=(b.textContent||'').trim();
-          if(/Final Test 100/i.test(t)) b.textContent='Final Test · ALL Questions';
-          if(/^Random Practice$/i.test(t)) b.textContent='Full Practice · ALL Questions';
-        });
+        document.querySelectorAll('button').forEach(b=>{const t=(b.textContent||'').trim();if(/Final Test 100/i.test(t))b.textContent='Final Test · ALL Questions';if(/^Random Practice$/i.test(t))b.textContent='Full Practice · ALL Questions';});
       })();
     `;
     d.body.appendChild(patch);
 
-    /* Enter = check, Enter again = next, for typed-answer quizzes. */
-    d.addEventListener('keydown',e=>{
-      if(e.key!=='Enter'||e.repeat) return;
-      const modal=d.querySelector('#modal,#quizModal');
-      if(!modal||modal.classList.contains('hidden')) return;
-      const checkBtn=d.getElementById('checkBtn');
-      const nextBtn=d.getElementById('nextBtn')||d.getElementById('next');
-      const active=d.activeElement;
-      const isTextInput=active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA');
-      if(!isTextInput && (!nextBtn||nextBtn.classList.contains('hidden'))) return;
-      e.preventDefault();
-      if(nextBtn&&!nextBtn.classList.contains('hidden')&&typeof w.nextQuestion==='function'){
-        w.nextQuestion();
-        setTimeout(()=>{const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer');if(input)input.focus();},0);
-      }else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){
-        w.checkTyped();
-      }else if(typeof w.checkSpelling==='function'){
-        w.checkSpelling();
+    let lastRecorded='';let completedKey='';
+    function txt(sel){const el=d.querySelector(sel);return el?(el.textContent||'').trim():''}
+    function inspectAnswer(clicked,capturedInput){
+      const counter=txt('#counter');
+      const question=txt('#prompt,#qPrompt,.prompt,.qprompt')||txt('#instruction');
+      const result=txt('#result,.result');
+      const title=txt('#quizTitle,#title,.top b');
+      let correct=null;
+      if(clicked&&clicked.classList.contains('correct'))correct=true;
+      else if(clicked&&clicked.classList.contains('wrong'))correct=false;
+      else if(/Correct!|答对了/i.test(result))correct=true;
+      else if(/Incorrect|答错了|Correct answer:/i.test(result))correct=false;
+      if(correct===null)return;
+      const key=BOOK_NO+'|'+counter+'|'+question;
+      if(key===lastRecorded)return;lastRecorded=key;
+      track('answer',{question_key:key,question_text:question,answer_text:capturedInput||((clicked&&clicked.textContent)||'').trim(),is_correct:correct,quiz_mode:title});
+      const m=counter.match(/(?:Question\s*)?(\d+)\s*\/\s*(\d+)/i);
+      if(m&&Number(m[1])===Number(m[2])){
+        const ck=BOOK_NO+'|'+title+'|'+m[2];
+        if(ck!==completedKey){completedKey=ck;track('quiz_complete',{quiz_mode:title,question_key:ck});}
       }
+    }
+    d.addEventListener('click',e=>{
+      const b=e.target.closest('button');if(!b)return;
+      const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer,input.answer');
+      const captured=input?input.value:'';
+      setTimeout(()=>inspectAnswer(b,captured),80);
+    },true);
+
+    d.addEventListener('keydown',e=>{
+      if(e.key!=='Enter'||e.repeat)return;
+      const modal=d.querySelector('#modal,#quizModal');if(!modal||modal.classList.contains('hidden'))return;
+      const checkBtn=d.getElementById('checkBtn');const nextBtn=d.getElementById('nextBtn')||d.getElementById('next');const active=d.activeElement;
+      const isTextInput=active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA');if(!isTextInput&&(!nextBtn||nextBtn.classList.contains('hidden')))return;
+      e.preventDefault();
+      if(nextBtn&&!nextBtn.classList.contains('hidden')&&typeof w.nextQuestion==='function'){w.nextQuestion();setTimeout(()=>{const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer');if(input)input.focus();},0);}
+      else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){const v=active&&active.value||'';w.checkTyped();setTimeout(()=>inspectAnswer(checkBtn,v),80);}
+      else if(typeof w.checkSpelling==='function'){const v=active&&active.value||'';w.checkSpelling();setTimeout(()=>inspectAnswer(checkBtn||active,v),80);}
     });
-  }catch(err){console.warn('Full mastery patch could not be attached.',err);}
+  }catch(err){console.warn('Reader patch could not be attached.',err);}
 });
 
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&['u','s'].includes(k))){e.preventDefault();return false}});
