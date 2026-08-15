@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
 <title>MOE UASA English Reader</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#071522}.bar{height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;background:linear-gradient(90deg,#081a2c,#12375b);border-bottom:1px solid #2e5778;color:white}.home,.dash{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:white;background:#1b5f96;border:1px solid #6fc8e5;padding:10px 14px;border-radius:11px;font-weight:800}.links{display:flex;gap:8px}.title{font-size:14px;color:#c9deef;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.frame{width:100%;height:calc(100% - 58px);border:0;background:white}@media(max-width:600px){.bar{height:54px}.frame{height:calc(100% - 54px)}.title{display:none}.dash{display:none}}
 </style>
 </head>
-<body oncontextmenu="return false">
+<body>
 <div class="bar"><div class="links"><a class="home" href="index.html">← Home</a><a class="dash" href="student-dashboard.html">Dashboard</a></div><div class="title" id="label">MOE UASA English Learning Module</div></div>
 <iframe id="frame" class="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-downloads"></iframe>
 <script>
@@ -20,179 +19,25 @@ localStorage.setItem('uasaApiBase',API);
 const studentId=()=>localStorage.getItem('uasaStudentId')||'';
 const bookMatch=file.match(/Book_(\d+)/i);const BOOK_NO=bookMatch?Number(bookMatch[1]):0;
 const BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
-async function track(event_type,extra={}){
-  const sid=studentId();if(!sid||!BOOK_NO)return;
-  const payload={student_id:sid,book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,...extra};
-  try{await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}catch(e){}
-}
-if(!allowed.test(file)||file==='index.html'||file==='reader.html'){
-  document.getElementById('label').textContent='Invalid module';
-  frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';
-}else{
-  frame.src=file;
-  document.getElementById('label').textContent=BOOK_TITLE;
-}
-
+async function track(event_type,extra={}){const sid=studentId();if(!sid||!BOOK_NO)return;const payload={student_id:sid,book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,...extra};try{await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})}catch(e){}}
+if(!allowed.test(file)||file==='index.html'||file==='reader.html'){document.getElementById('label').textContent='Invalid module';frame.srcdoc='<h2 style="font-family:Arial;padding:30px">Invalid learning module.</h2>';}else{frame.src=file;document.getElementById('label').textContent=BOOK_TITLE;}
 frame.addEventListener('load',()=>{
-  track('book_open');
-  try{
-    const w=frame.contentWindow;
-    const d=frame.contentDocument;
-    const patch=d.createElement('script');
-    patch.textContent=`
-      (function(){
-        try{
-          if(typeof startQuiz==='function' && typeof WORDS!=='undefined' && typeof quiz!=='undefined'){
-            const originalStartQuiz=startQuiz;
-            startQuiz=function(){
-              const args=[...arguments];originalStartQuiz.apply(this,args);
-              let pool=(typeof getFiltered==='function')?getFiltered():WORDS;
-              if(!pool||!pool.length)pool=WORDS;
-              quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);
-              qi=0;score=0;if(typeof showQuestion==='function')showQuestion();
-            };
-          }
-        }catch(e){}
-        try{
-          if(typeof QUESTIONS!=='undefined'&&typeof quiz!=='undefined'){
-            if(typeof startModule==='function'){
-              const oldStartModule=startModule;
-              startModule=function(type){oldStartModule(type);let pool=(type==='mixed')?QUESTIONS:QUESTIONS.filter(q=>q.type===type);quiz=(typeof shuffle==='function')?shuffle(pool):[...pool].sort(()=>Math.random()-.5);qi=0;score=0;if(typeof showQuestion==='function')showQuestion();else if(typeof show==='function')show();};
-            }
-            if(typeof startFinal==='function'){
-              const oldStartFinal=startFinal;
-              startFinal=function(){oldStartFinal();quiz=(typeof shuffle==='function')?shuffle(QUESTIONS):[...QUESTIONS].sort(()=>Math.random()-.5);qi=0;score=0;if(typeof showQuestion==='function')showQuestion();else if(typeof show==='function')show();};
-            }
-          }
-        }catch(e){}
-        try{
-          if(typeof randomTest==='function'&&typeof Q!=='undefined'&&typeof begin==='function'){
-            randomTest=function(n){let pool=Q;if(typeof level!=='undefined'&&level&&level.value&&typeof P!=='undefined')pool=Q.filter(q=>P[q.pi][1]===level.value);begin(n>=20?'Final Reading Test · ALL Questions':'Reading Practice · ALL Questions',pool);};
-          }
-        }catch(e){}
-        ['qCount','questionCount'].forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});
-        document.querySelectorAll('button').forEach(b=>{const t=(b.textContent||'').trim();if(/Final Test 100/i.test(t))b.textContent='Final Test · ALL Questions';if(/^Random Practice$/i.test(t))b.textContent='Full Practice · ALL Questions';});
-      })();
-    `;
-    d.body.appendChild(patch);
-
-    let lastRecorded='';let completedKey='';
-    function txt(sel){const el=d.querySelector(sel);return el?(el.textContent||'').trim():''}
-    function recordDirect(correct,answerText='',questionText=''){
-      const counter=txt('#counter');
-      const question=questionText||txt('#prompt,#qPrompt,.prompt,.qprompt')||txt('#instruction');
-      const title=txt('#quizTitle,#title,.top b');
-      const key=BOOK_NO+'|'+counter+'|'+question;
-      if(key===lastRecorded)return;
-      lastRecorded=key;
-      track('answer',{question_key:key,question_text:question,answer_text:String(answerText||''),is_correct:!!correct,quiz_mode:title});
-      const m=counter.match(/(?:Question\s*)?(\d+)\s*\/\s*(\d+)/i);
-      if(m&&Number(m[1])===Number(m[2])){
-        const ck=BOOK_NO+'|'+title+'|'+m[2];
-        if(ck!==completedKey){completedKey=ck;track('quiz_complete',{quiz_mode:title,question_key:ck});}
-      }
+ track('book_open');
+ try{
+  const w=frame.contentWindow,d=frame.contentDocument;
+  if(typeof w.startQuiz==='function'&&typeof w.WORDS!=='undefined'){
+   const originalStartQuiz=w.startQuiz;
+   w.startQuiz=function(mode){
+    if(mode==='meaning'){
+     let pool=(typeof w.getFiltered==='function')?w.getFiltered():w.WORDS;
+     if(!pool||!pool.length)pool=w.WORDS;
+     try{sessionStorage.setItem('ninjaVocabPool',JSON.stringify(pool));sessionStorage.setItem('ninjaVocabSource',file);}catch(e){}
+     location.href='ninja-vocab.html?file='+encodeURIComponent(file)+'&mode=meaning';return;
     }
-
-    /* Direct hooks: record the answer at the exact moment the book grades it. */
-    if(typeof w.checkMeaning==='function'){
-      const old=w.checkMeaning;
-      w.checkMeaning=function(btn,ok,item){
-        const ans=btn?(btn.textContent||'').trim():'';
-        const q=item&&item.en?item.en:txt('#prompt');
-        const out=old.apply(this,arguments);
-        recordDirect(!!ok,ans,q);
-        return out;
-      };
-    }
-    if(typeof w.checkSpelling==='function'){
-      const old=w.checkSpelling;
-      w.checkSpelling=function(){
-        const input=d.getElementById('spellInput')||d.querySelector('#answerArea input,.textanswer,input.answer');
-        const ans=input?input.value.trim():'';
-        let expected='',q=txt('#prompt');
-        try{if(w.quiz&&typeof w.qi!=='undefined'&&w.quiz[w.qi])expected=String(w.quiz[w.qi].en||w.quiz[w.qi].word||w.quiz[w.qi].answer||'').trim();}catch(e){}
-        const out=old.apply(this,arguments);
-        const result=txt('#result,.result');
-        const correct=expected?ans.toLowerCase()===expected.toLowerCase():/Correct spelling|Correct!|答对了|拼写正确/i.test(result);
-        recordDirect(correct,ans,q);
-        return out;
-      };
-    }
-    if(typeof w.answer==='function'){
-      const old=w.answer;
-      w.answer=function(btn,ok,item){
-        const ans=btn?(btn.textContent||'').trim():'';
-        const q=(item&&(item.base||item.en||item.term||item.basic))||txt('#prompt,#qPrompt');
-        const out=old.apply(this,arguments);
-        recordDirect(!!ok,ans,q);
-        return out;
-      };
-    }
-    if(typeof w.grade==='function'){
-      const old=w.grade;
-      w.grade=function(btn,val){
-        let expected='';
-        try{expected=w.current&&w.current.answer!==undefined?String(w.current.answer):'';}catch(e){}
-        const out=old.apply(this,arguments);
-        const result=txt('#result,.result');
-        const correct=expected?String(val)===expected:/Correct!|答对了/i.test(result);
-        recordDirect(correct,String(val||''),txt('#qPrompt,#prompt'));
-        return out;
-      };
-    }
-    if(typeof w.checkTyped==='function'){
-      const old=w.checkTyped;
-      w.checkTyped=function(){
-        const input=d.querySelector('#answerArea input,.textanswer,input.answer');
-        const ans=input?input.value.trim():'';
-        const out=old.apply(this,arguments);
-        const result=txt('#result,.result');
-        const correct=/Correct!|答对了|拼写正确/i.test(result)&&!/Incorrect|答错了|Correct answer:/i.test(result);
-        recordDirect(correct,ans,txt('#qPrompt,#prompt'));
-        return out;
-      };
-    }
-
-    function inspectAnswer(clicked,capturedInput){
-      const counter=txt('#counter');
-      const question=txt('#prompt,#qPrompt,.prompt,.qprompt')||txt('#instruction');
-      const result=txt('#result,.result');
-      const title=txt('#quizTitle,#title,.top b');
-      let correct=null;
-      if(clicked&&clicked.classList.contains('correct'))correct=true;
-      else if(clicked&&clicked.classList.contains('wrong'))correct=false;
-      else if(/Correct!|答对了|Correct spelling|拼写正确/i.test(result)&&!/Incorrect|答错了|Correct answer:/i.test(result))correct=true;
-      else if(/Incorrect|答错了|Correct answer:/i.test(result))correct=false;
-      if(correct===null)return;
-      const key=BOOK_NO+'|'+counter+'|'+question;
-      if(key===lastRecorded)return;lastRecorded=key;
-      track('answer',{question_key:key,question_text:question,answer_text:capturedInput||((clicked&&clicked.textContent)||'').trim(),is_correct:correct,quiz_mode:title});
-      const m=counter.match(/(?:Question\s*)?(\d+)\s*\/\s*(\d+)/i);
-      if(m&&Number(m[1])===Number(m[2])){
-        const ck=BOOK_NO+'|'+title+'|'+m[2];
-        if(ck!==completedKey){completedKey=ck;track('quiz_complete',{quiz_mode:title,question_key:ck});}
-      }
-    }
-    d.addEventListener('click',e=>{
-      const b=e.target.closest('button');if(!b)return;
-      const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer,input.answer');
-      const captured=input?input.value:'';
-      setTimeout(()=>inspectAnswer(b,captured),100);
-    },true);
-
-    d.addEventListener('keydown',e=>{
-      if(e.key!=='Enter'||e.repeat)return;
-      const modal=d.querySelector('#modal,#quizModal');if(!modal||modal.classList.contains('hidden'))return;
-      const checkBtn=d.getElementById('checkBtn');const nextBtn=d.getElementById('nextBtn')||d.getElementById('next');const active=d.activeElement;
-      const isTextInput=active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA');if(!isTextInput&&(!nextBtn||nextBtn.classList.contains('hidden')))return;
-      e.preventDefault();
-      if(nextBtn&&!nextBtn.classList.contains('hidden')&&typeof w.nextQuestion==='function'){w.nextQuestion();setTimeout(()=>{const input=d.querySelector('#answerArea input,#spellingBox input,.textanswer');if(input)input.focus();},0);}
-      else if(checkBtn&&!checkBtn.classList.contains('hidden')&&typeof w.checkTyped==='function'){w.checkTyped();}
-      else if(typeof w.checkSpelling==='function'){w.checkSpelling();}
-    });
-  }catch(err){console.warn('Reader patch could not be attached.',err);}
+    return originalStartQuiz.apply(this,arguments);
+   };
+  }
+ }catch(err){console.warn('Quiz bridge could not be attached.',err);}
 });
-
-document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&['u','s'].includes(k))){e.preventDefault();return false}});
 </script>
 </body></html>
