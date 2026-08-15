@@ -94,7 +94,7 @@ frame.addEventListener('load',()=>{track('book_open');try{const d=frame.contentD
     if(/Meaning Quiz|词义测验/i.test(text)||/startQuiz\s*\(\s*['\"]meaning['\"]\s*\)/i.test(oc)){
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
       try{sessionStorage.removeItem('ninjaVocabPool');sessionStorage.setItem('ninjaVocabSource',file)}catch(err){}
-      frame.src='ninja-vocab.html?file='+encodeURIComponent(file)+'&level='+CURRENT_LEVEL+'&from=reader-v2';
+      frame.src='ninja-vocab.html?v=static20-20260815-1220&file='+encodeURIComponent(file)+'&level='+CURRENT_LEVEL+'&from=reader-v2';
       return false;
     }
   },true);
