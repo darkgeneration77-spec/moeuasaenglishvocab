@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Past Tense Racing Quiz</title>
+<style>
+*{box-sizing:border-box;user-select:none}html,body{margin:0;min-height:100%;font-family:"Segoe UI",Arial,sans-serif;background:linear-gradient(145deg,#0b1a2e,#1a2f44);color:#fff}
+body{display:flex;justify-content:center;padding:10px}.game{width:min(100%,880px);background:#1e3a5a;border:1px solid #4d7ca0;border-radius:28px;padding:14px;box-shadow:0 20px 35px #0008}
+.top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}.pill{background:#0d1f30;border:1px solid #416d8b;border-radius:999px;padding:8px 14px;font-weight:800}
+.target{flex:1;text-align:center;background:#152b3e;border:1px solid #3f7191;border-radius:18px;padding:8px 12px;min-width:260px}.target small{display:block;color:#9ec9e6;font-size:11px}.target b{font-size:30px;color:#fce8b2}.target span{display:block;color:#bfe3ff;font-size:13px;margin-top:2px}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px}.hud div{background:#10283c;border:1px solid #426b89;border-radius:12px;padding:7px;text-align:center;font-weight:900}.hud small{display:block;font-size:10px;color:#9fc6e5}
+.status{text-align:center;min-height:25px;font-weight:800;color:#bfe3ff}.status.good{color:#86efac}.status.bad{color:#fecaca}
+canvas{display:block;width:100%;height:auto;aspect-ratio:800/500;background:#335f7a;border-radius:20px;border:3px solid #3f6b88;box-shadow:inset 0 -6px #0b1f2e,0 12px 28px #0008;touch-action:none}
+.controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.btn{border:0;border-radius:999px;padding:10px 18px;font-weight:900;cursor:pointer;background:#2c5677;color:#fff;box-shadow:0 4px 0 #0a1e2c}.btn.primary{background:#e9b13b;color:#1f2f3a}.btn.danger{background:#c74e4e}.hint{flex:1;text-align:center;background:#173141;border:1px solid #3f7193;border-radius:999px;padding:9px;color:#b6d6ed}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#06111ce9;z-index:20}.overlay.show{display:flex}.stageWrap{position:relative}.card{background:#15324a;border:1px solid #5a83a0;border-radius:20px;padding:24px;text-align:center;max-width:440px}.resultGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}.resultGrid div{background:#0d2132;border-radius:12px;padding:10px}
+@media(max-width:600px){.target b{font-size:24px}.hud{grid-template-columns:repeat(2,1fr)}.game{padding:8px}.btn{flex:1}.hint{order:3;flex-basis:100%}}
+</style>
+</head>
+<body>
+<div class="game">
+  <div class="top">
+    <button class="btn" id="backBtn">← 返回</button>
+    <div class="target"><small>DRIVE INTO THE CORRECT PAST TENSE</small><b id="baseWord">loading…</b><span id="meaning"></span></div>
+    <div class="pill">🏆 <span id="score">0</span></div>
+  </div>
+  <div class="hud">
+    <div><small>LEVEL</small><span id="level">1</span></div>
+    <div><small>PROGRESS</small><span id="progress">0 / 20</span></div>
+    <div><small>ACCURACY</small><span id="accuracy">100%</span></div>
+    <div><small>WRONG HITS</small><span id="wrong">0</span></div>
+  </div>
+  <div id="status" class="status">⬅️ ➡️ / A D 控制赛车，撞正确 Past Tense</div>
+  <div class="stageWrap">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="overlay" class="overlay"><div class="card"><h2 id="endTitle">LEVEL COMPLETE</h2><div id="endText"></div><button class="btn primary" id="playAgain">再玩一次</button></div></div>
+  </div>
+  <div class="controls">
+    <button class="btn primary" id="restartBtn">🔄 重新发车</button>
+    <div class="hint">撞对 <b>+10</b> · 撞错 <b>-5</b> · 每 Level 约 20 个动词</div>
+    <button class="btn danger" id="pauseBtn">⏸ 暂停</button>
+  </div>
+</div>
+<script>
+(()=>{
+const API='https://moe-uasa-english-api.darkgeneration77.workers.dev';
+const qs=new URLSearchParams(location.search),file=qs.get('file')||'MOE_UASA_English_Vocabulary_Book_2_High_Frequency_Verbs.html',LEVEL=Math.max(1,+(qs.get('level')||1));
+const bm=file.match(/Book_(\d+)/i),BOOK_NO=bm?+bm[1]:2,BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),W=800,H=500;
+const baseEl=document.getElementById('baseWord'),meaningEl=document.getElementById('meaning'),scoreEl=document.getElementById('score'),levelEl=document.getElementById('level'),progressEl=document.getElementById('progress'),accuracyEl=document.getElementById('accuracy'),wrongEl=document.getElementById('wrong'),statusEl=document.getElementById('status'),overlay=document.getElementById('overlay');
+let full=[],pool=[],order=[],index=0,score=0,cleanCorrect=0,wrongHits=0,target=null,targetMistake=false,row=null,paused=false,over=false,raf=0,keys={left:false,right:false},last=performance.now(),roadOffset=0;
+const lanes=[170,400,630],car={lane:1,x:400,y:425,w:56,h:36,speed:0};
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function safe(v){return String(v==null?'':v)}
+function key(){return `B${BOOK_NO}|L${LEVEL}|Q${index+1}|${safe(target?.base)}`}
+function tell(type,data={}){try{parent.postMessage({source:'uasa-ninja',game:'racing',type,book_no:BOOK_NO,level:LEVEL,...data},location.origin)}catch(e){}}
+async function track(event_type,extra={}){const sid=localStorage.getItem('uasaStudentId')||'';if(!sid)return;try{await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,quiz_mode:'Past Tense Racing Level '+LEVEL,...extra})})}catch(e){}}
+function hud(){scoreEl.textContent=score;levelEl.textContent=LEVEL;progressEl.textContent=index+' / '+order.length;const attempted=index+(target?1:0);accuracyEl.textContent=(attempted?Math.round(cleanCorrect/attempted*100):100)+'%';wrongEl.textContent=wrongHits}
+function setStatus(t,c=''){statusEl.textContent=t;statusEl.className='status '+c}
+function options(){const wrong=shuffle(pool.filter(x=>safe(x.past)!==safe(target.past))).slice(0,2);return shuffle([target,...wrong])}
+function newRow(){const opts=options();row={y:-70,speed:2.15,items:opts.map((w,i)=>({lane:i,x:lanes[i],word:w,correct:safe(w.past)===safe(target.past),hit:false}))}}
+function showQuestion(){if(index>=order.length){finish();return}target=order[index];targetMistake=false;baseEl.textContent=target.base;meaningEl.textContent=(target.zh?'华语：'+target.zh:'')+(target.ms?' · BM：'+target.ms:'');car.lane=1;car.x=lanes[1];newRow();hud();setStatus('选择车道，撞 '+target.base+' 的正确 Past Tense。')}
+function moveLane(d){if(over||paused)return;car.lane=Math.max(0,Math.min(2,car.lane+d));}
+function collide(){
+ if(!row)return;
+ if(row.y<365||row.y>455)return;
+ const item=row.items[car.lane];if(!item||item.hit)return;
+ item.hit=true;
+ if(item.correct){
+   score+=10;if(!targetMistake)cleanCorrect++;
+   setStatus('正确！'+target.base+' → '+target.past+'  +10','good');
+   tell('answer',{ok:true,delta:10,clean:!targetMistake,question_key:key(),word:target.past});
+   track('answer',{question_key:key(),question_text:target.base,answer_text:target.past,is_correct:!targetMistake});
+   index++;target=null;hud();
+   setTimeout(()=>{if(index>=order.length)finish();else showQuestion()},650);
+   row=null;
+ }else{
+   score-=5;wrongHits++;targetMistake=true;
+   setStatus('撞错 '+item.word.past+'  -5，同一题再来。','bad');
+   tell('answer',{ok:false,delta:-5,clean:false,question_key:key(),word:item.word.past});
+   track('racing_wrong_hit',{question_key:key(),question_text:target.base,answer_text:item.word.past,is_correct:false});
+   hud();row=null;setTimeout(newRow,700);
+ }
+}
+function drawRoundRect(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();if(fill)ctx.fill();if(stroke)ctx.stroke()}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle='#335f7a';ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#234a61';ctx.fillRect(80,0,640,H);
+ ctx.strokeStyle='#d7e7f3';ctx.lineWidth=4;ctx.setLineDash([28,24]);
+ roadOffset=(roadOffset+3)%52;
+ [285,515].forEach(x=>{ctx.beginPath();ctx.moveTo(x,-52+roadOffset);ctx.lineTo(x,H+52);ctx.stroke()});ctx.setLineDash([]);
+ ctx.fillStyle='#3f7a5a';ctx.fillRect(0,0,72,H);ctx.fillRect(728,0,72,H);
+ if(row)row.items.forEach(it=>{const w=170,h=54,x=it.x-w/2,y=row.y;ctx.shadowColor='#0008';ctx.shadowBlur=12;ctx.fillStyle='#e9b13b';ctx.strokeStyle='#9e721f';ctx.lineWidth=3;drawRoundRect(x,y,w,h,16,true,true);ctx.shadowBlur=0;ctx.fillStyle='#172531';ctx.font='bold 24px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(it.word.past,it.x,y+h/2)});
+ const cx=car.x,cy=car.y;ctx.shadowColor='#0008';ctx.shadowBlur=18;ctx.fillStyle='#c92d2d';ctx.strokeStyle='#781313';ctx.lineWidth=3;drawRoundRect(cx-28,cy-18,56,36,12,true,true);ctx.shadowBlur=0;ctx.fillStyle='#4aa4d1';drawRoundRect(cx-14,cy-24,28,18,6,true,false);ctx.fillStyle='#fee08a';ctx.beginPath();ctx.arc(cx-20,cy-8,5,0,Math.PI*2);ctx.arc(cx+20,cy-8,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 12px Segoe UI';ctx.fillText(target?target.base.toUpperCase():'',cx,cy+4);
+}
+function update(dt){
+ if(over||paused)return;
+ if(keys.left){moveLane(-1);keys.left=false}if(keys.right){moveLane(1);keys.right=false}
+ car.x+= (lanes[car.lane]-car.x)*Math.min(1,dt*0.012);
+ if(row){row.y+=row.speed*dt*0.06;collide();if(row&&row.y>H+40){row=null;setTimeout(()=>{if(!over&&target)newRow()},450)}}
+}
+function loop(t){const dt=Math.min(34,t-last);last=t;update(dt);draw();raf=requestAnimationFrame(loop)}
+function finish(){
+ if(over)return;over=true;row=null;const total=order.length,accuracy=Math.round(cleanCorrect/Math.max(1,total)*100),mastered=accuracy>=80;
+ tell('level_complete',{total,correct:cleanCorrect,wrong_cuts:wrongHits,score,accuracy,mastered});
+ track('racing_level_complete',{question_key:`B${BOOK_NO}|L${LEVEL}|SUMMARY`,question_text:'Past Tense Racing Level '+LEVEL,answer_text:`Score ${score}; clean ${cleanCorrect}/${total}; wrong ${wrongHits}`,is_correct:mastered});
+ document.getElementById('endTitle').textContent=mastered?'RACING LEVEL MASTERED!':'RACING LEVEL COMPLETE';
+ document.getElementById('endText').innerHTML=`<div class="resultGrid"><div><b>${score}</b><br>Score</div><div><b>${accuracy}%</b><br>Accuracy</div><div><b>${cleanCorrect}/${total}</b><br>First-try Correct</div><div><b>${wrongHits}</b><br>Wrong Hits</div></div>`;
+ overlay.classList.add('show');
+}
+function reset(){cancelAnimationFrame(raf);overlay.classList.remove('show');index=0;score=0;cleanCorrect=0;wrongHits=0;target=null;targetMistake=false;row=null;paused=false;over=false;order=shuffle(pool);last=performance.now();showQuestion();raf=requestAnimationFrame(loop);track('racing_level_start',{question_key:`B${BOOK_NO}|L${LEVEL}|START`,question_text:'Past Tense Racing Level '+LEVEL,answer_text:pool.map(x=>x.base+'→'+x.past).join(', '),is_correct:true})}
+async function load(){
+ try{
+   const html=await fetch(file,{cache:'no-store'}).then(r=>r.text()),m=html.match(/const\s+WORDS\s*=\s*(\[[\s\S]*?\]);/);if(!m)throw Error('WORDS not found');
+   full=Function('return '+m[1])().map(w=>({base:w.base||w.en||w.word||'',past:w.past||'',pp:w.pp||'',zh:w.zh||'',ms:w.ms||''})).filter(w=>w.base&&w.past);
+   const start=(LEVEL-1)*20;pool=full.slice(start,start+20);if(pool.length<3)pool=shuffle(full).slice(0,Math.min(20,full.length));
+   reset();
+ }catch(e){baseEl.textContent='无法读取动词';meaningEl.textContent='请返回 Book 2 再进入 Past Tense Quiz';setStatus('Racing Quiz 载入失败','bad')}
+}
+window.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){keys.left=true;e.preventDefault()}if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){keys.right=true;e.preventDefault()}if(e.key===' '){paused=!paused;e.preventDefault()}});
+canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect(),x=e.clientX-r.left;if(x<r.width/2)moveLane(-1);else moveLane(1)});
+document.getElementById('restartBtn').onclick=reset;document.getElementById('pauseBtn').onclick=()=>{paused=!paused;document.getElementById('pauseBtn').textContent=paused?'▶ 继续':'⏸ 暂停'};document.getElementById('playAgain').onclick=reset;document.getElementById('backBtn').onclick=()=>history.length>1?history.back():location.href=file;
+load();
+})();
+</script>
+</body>
+</html>
