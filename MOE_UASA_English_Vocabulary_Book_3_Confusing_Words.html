@@ -6,45 +6,16 @@
 <style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f5f7fb}#bookFrame{display:block;width:100%;height:100%;border:0;background:#fff}</style>
 </head>
 <body>
-<iframe id="bookFrame" src="MOE_UASA_English_Vocabulary_Book_3_Confusing_Words_original.html?v=20260815-1528" allow="autoplay"></iframe>
+<iframe id="bookFrame" src="MOE_UASA_English_Vocabulary_Book_3_Confusing_Words_original.html?v=20260815-1540" allow="autoplay"></iframe>
 <script>
 (()=>{
 const frame=document.getElementById('bookFrame');
 const ORIGINAL='MOE_UASA_English_Vocabulary_Book_3_Confusing_Words_original.html';
 let battleMode=false;
-function openBattle(){
- battleMode=true;
- frame.src='book3-battle-arena.html?v=20260815-1528&file='+encodeURIComponent(ORIGINAL);
- return false;
-}
-function hook(){
- if(battleMode)return;
- try{
-  const d=frame.contentDocument,w=frame.contentWindow;
-  if(!d||!w||!d.body)return;
-  if(typeof w.startQuiz==='function' && w.startQuiz!==openBattle){w.startQuiz=openBattle;}
-  if(!d.documentElement.dataset.battleHooked){
-   d.documentElement.dataset.battleHooked='1';
-   d.addEventListener('click',e=>{
-    const b=e.target.closest('button');if(!b)return;
-    const text=(b.textContent||'').trim(),oc=b.getAttribute('onclick')||'';
-    if(/Start Quiz|开始辨析/i.test(text)||/startQuiz\s*\(/i.test(oc)){
-      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openBattle();return false;
-    }
-   },true);
-  }
- }catch(e){}
-}
-frame.addEventListener('load',()=>{
- if(battleMode){
-   try{const d=frame.contentDocument;if(d&&!d.getElementById('gameMusicLoader')){const s=d.createElement('script');s.id='gameMusicLoader';s.src='game-music.js?v=20260815-1452';d.head.appendChild(s)}}catch(e){}
-   return;
- }
- hook();setTimeout(hook,80);setTimeout(hook,350);
-});
-// Do not rely on load timing. Cached iframe pages can finish before listener registration.
-hook();
-const hookTimer=setInterval(()=>{if(!battleMode)hook()},300);
+function openBattle(){battleMode=true;frame.src='book3-battle-arena-v2.html?v=20260815-1540&file='+encodeURIComponent(ORIGINAL);return false;}
+function hook(){if(battleMode)return;try{const d=frame.contentDocument,w=frame.contentWindow;if(!d||!w||!d.body)return;if(typeof w.startQuiz==='function'&&w.startQuiz!==openBattle)w.startQuiz=openBattle;if(!d.documentElement.dataset.battleHooked){d.documentElement.dataset.battleHooked='1';d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const text=(b.textContent||'').trim(),oc=b.getAttribute('onclick')||'';if(/Start Quiz|开始辨析/i.test(text)||/startQuiz\s*\(/i.test(oc)){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();openBattle();return false}},true)}}catch(e){}}
+frame.addEventListener('load',()=>{if(battleMode){try{const d=frame.contentDocument;if(d&&!d.getElementById('gameMusicLoader')){const s=d.createElement('script');s.id='gameMusicLoader';s.src='game-music.js?v=20260815-1452';d.head.appendChild(s)}}catch(e){}return}hook();setTimeout(hook,80);setTimeout(hook,350)});
+hook();setInterval(()=>{if(!battleMode)hook()},300);
 window.addEventListener('message',e=>{if(e.source!==frame.contentWindow)return;try{parent.postMessage(e.data,location.origin)}catch(err){}});
 })();
 </script>
