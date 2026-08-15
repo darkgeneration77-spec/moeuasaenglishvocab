@@ -7,55 +7,68 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;user-select:none}
 body{min-height:100vh;background:#07111f;color:#fff;font-family:Arial,"Noto Sans SC",sans-serif;display:flex;justify-content:center;padding:16px;overflow:auto}
-.wrap{width:min(100%,560px)}
+.wrap{width:min(100%,620px)}
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .back,.restart{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}.back{background:#163a5f;color:#fff}.restart{background:#ef4444;color:#fff}
 .title{text-align:center;flex:1}.title b{display:block;font-size:18px}.title small{color:#9fc6e5}
-.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.hud div{background:#10233a;border:1px solid #284866;border-radius:13px;padding:10px;text-align:center;font-weight:800}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.hud div{background:#10233a;border:1px solid #284866;border-radius:13px;padding:10px 6px;text-align:center;font-weight:800}.hud small{display:block;color:#9fc6e5;font-size:10px;margin-bottom:3px}
 .hint{background:linear-gradient(135deg,#14263e,#1d3555);border:1px solid #31587c;border-radius:16px;padding:14px;text-align:center;margin-bottom:10px}.hint .label{font-size:12px;color:#9fc6e5}.hint .zh{font-size:28px;font-weight:900;color:#fde047;margin:5px 0}.hint .ms{font-size:14px;color:#bfdbfe}
+.statusLine{min-height:30px;text-align:center;font-weight:800;color:#bfdbfe;padding:4px}.statusLine.good{color:#86efac}.statusLine.bad{color:#fca5a5}
 .stage{position:relative;height:540px;background:radial-gradient(circle at 50% 15%,#173455,#07111f 72%);border:1px solid #294966;border-radius:22px;overflow:hidden;touch-action:none}
 .flyingWord{position:absolute;display:block;min-width:110px;max-width:220px;padding:14px 18px;border-radius:16px;border:2px solid #60a5fa;background:#10263a;color:#e0f2fe;font-weight:900;font-size:22px;text-align:center;box-shadow:0 0 18px #38bdf866;z-index:5;cursor:pointer;visibility:hidden;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.flyingWord.show{visibility:visible}
-.flyingWord.cut{opacity:0;transform:scale(1.25) rotate(8deg);transition:.12s}
+.flyingWord.show{visibility:visible}.flyingWord.cut{opacity:0;transform:scale(1.2) rotate(8deg);transition:.12s}
 .tip{text-align:center;color:#9fc6e5;font-size:13px;padding:10px 2px 3px}
-.overlay{position:absolute;inset:0;background:#020617e8;display:none;align-items:center;justify-content:center;text-align:center;padding:26px;z-index:20}.overlay.show{display:flex}.card h2{font-size:34px;margin-bottom:10px}.card p{line-height:1.6;color:#cbd5e1;margin-bottom:14px}.card button{border:0;border-radius:12px;padding:12px 18px;background:#2563eb;color:white;font-weight:800;cursor:pointer}
-@media(max-width:520px){body{padding:8px}.hint .zh{font-size:23px}.hud{font-size:13px}.title b{font-size:15px}.stage{height:500px}.flyingWord{font-size:18px;min-width:90px;padding:12px 14px}}
+.overlay{position:absolute;inset:0;background:#020617ef;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:20}.overlay.show{display:flex}.card{max-width:420px}.card h2{font-size:31px;margin-bottom:10px}.card p{line-height:1.75;color:#cbd5e1;margin-bottom:14px}.resultGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0}.resultGrid div{background:#10233a;border:1px solid #284866;border-radius:10px;padding:10px}.card button{border:0;border-radius:12px;padding:12px 18px;background:#2563eb;color:white;font-weight:800;cursor:pointer}
+@media(max-width:520px){body{padding:8px}.hint .zh{font-size:23px}.hud{font-size:12px}.title b{font-size:15px}.stage{height:500px}.flyingWord{font-size:18px;min-width:90px;padding:12px 14px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top"><button class="back" id="backBtn">← 返回</button><div class="title"><b>忍者词汇 · Ninja Vocabulary</b><small id="bookLabel">Vocabulary Quiz</small></div><button class="restart" id="restartBtn">重来</button></div>
-  <div class="hud"><div>❤️ <span id="lives">3</span></div><div>⚡ <span id="score">0</span></div><div>🎯 <span id="round">0</span></div></div>
+  <div class="hud">
+    <div><small>LEVEL</small><span id="levelEl">1</span></div>
+    <div><small>SCORE</small><span id="scoreEl">0</span></div>
+    <div><small>PROGRESS</small><span id="progressEl">0 / 20</span></div>
+    <div><small>ACCURACY</small><span id="accuracyEl">100%</span></div>
+  </div>
   <div class="hint"><div class="label">砍掉正确的英文单词</div><div class="zh" id="zhHint">载入词汇中…</div><div class="ms" id="msHint"></div></div>
+  <div id="statusLine" class="statusLine">每个 Level 约 20 个词 · 砍对 +10 · 砍错 -5 · 漏掉目标 -3</div>
   <div class="stage" id="stage">
-    <button class="flyingWord" id="w0"></button>
-    <button class="flyingWord" id="w1"></button>
-    <button class="flyingWord" id="w2"></button>
-    <button class="flyingWord" id="w3"></button>
-    <button class="flyingWord" id="w4"></button>
-    <button class="flyingWord" id="w5"></button>
-    <div class="overlay" id="overlay"><div class="card"><h2>GAME OVER</h2><p id="endText"></p><button id="playAgain">再玩一次</button></div></div>
+    <button class="flyingWord" id="w0"></button><button class="flyingWord" id="w1"></button><button class="flyingWord" id="w2"></button><button class="flyingWord" id="w3"></button><button class="flyingWord" id="w4"></button><button class="flyingWord" id="w5"></button>
+    <div class="overlay" id="overlay"><div class="card"><h2 id="endTitle">LEVEL COMPLETE</h2><div id="endText"></div><button id="playAgain">再玩一次</button></div></div>
   </div>
   <div class="tip">电脑：点击单词来砍 · 手机：直接点按单词</div>
 </div>
 <script>
-const p=new URLSearchParams(location.search),file=p.get('file')||'MOE_UASA_English_Vocabulary_Book_1.html';
-const stage=document.getElementById('stage'),overlay=document.getElementById('overlay'),zhHint=document.getElementById('zhHint'),msHint=document.getElementById('msHint'),livesEl=document.getElementById('lives'),scoreEl=document.getElementById('score'),roundEl=document.getElementById('round');
+const API='https://moe-uasa-english-api.darkgeneration77.workers.dev';
+const p=new URLSearchParams(location.search),file=p.get('file')||'MOE_UASA_English_Vocabulary_Book_1.html',LEVEL=Math.max(1,+(p.get('level')||1));
+const bm=file.match(/Book_(\d+)/i),BOOK_NO=bm?+bm[1]:0,BOOK_TITLE=decodeURIComponent(file).replace(/_/g,' ').replace(/\.html$/,'');
+const sid=()=>localStorage.getItem('uasaStudentId')||'';
+const stage=document.getElementById('stage'),overlay=document.getElementById('overlay'),zhHint=document.getElementById('zhHint'),msHint=document.getElementById('msHint'),statusLine=document.getElementById('statusLine'),scoreEl=document.getElementById('scoreEl'),progressEl=document.getElementById('progressEl'),accuracyEl=document.getElementById('accuracyEl'),levelEl=document.getElementById('levelEl');
 const slots=[0,1,2,3,4,5].map(i=>document.getElementById('w'+i));
-let pool=[],spawnTimer=null,moveTimer=null,game={score:0,lives:3,round:0,target:null,over:false};
+let fullPool=[],pool=[],spawnTimer=null,moveTimer=null,CLOUD={total_xp:0,current_streak:0,best_streak:0,books_started:0,books_mastered:0};
+let game={score:0,index:0,correct:0,wrongCuts:0,missed:0,target:null,targetMistake:false,over:false,order:[]};
 const safe=v=>String(v==null?'':v);
-function hud(){livesEl.textContent=game.lives;scoreEl.textContent=game.score;roundEl.textContent=game.round}
-function chooseTarget(){if(!pool.length)return;game.target=pool[Math.floor(Math.random()*pool.length)];zhHint.textContent=safe(game.target.zh||game.target.ms);msHint.textContent=game.target.ms?'Bahasa Melayu: '+game.target.ms:'';game.round++;hud()}
-function hideSlot(s){s.classList.remove('show','cut');s.style.visibility='hidden';s.dataset.active='0';s.dataset.en='';s.dataset.correct='0'}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function hud(){scoreEl.textContent=game.score;progressEl.textContent=Math.min(game.index,game.order.length)+' / '+game.order.length;const done=game.index,acc=done?Math.round(game.correct/done*100):100;accuracyEl.textContent=acc+'%';levelEl.textContent=LEVEL}
+function status(msg,type=''){statusLine.textContent=msg;statusLine.className='statusLine '+type}
+function hideSlot(s){s.classList.remove('show','cut');s.style.visibility='hidden';s.dataset.active='0';s.dataset.en='';s.dataset.correct='0';s.dataset.targetKey=''}
 function resetSlots(){slots.forEach(hideSlot)}
-function reset(){clearInterval(spawnTimer);clearInterval(moveTimer);game={score:0,lives:3,round:0,target:null,over:false};overlay.classList.remove('show');resetSlots();chooseTarget();hud();spawn(true);setTimeout(()=>spawn(false),350);setTimeout(()=>spawn(false),700);spawnTimer=setInterval(()=>spawn(false),900);moveTimer=setInterval(moveAll,35)}
-function chooseWord(forceTarget){if(forceTarget||Math.random()<.52)return game.target;const others=pool.filter(x=>x!==game.target);return others[Math.floor(Math.random()*others.length)]||game.target}
-function spawn(forceTarget=false){if(game.over||!game.target)return;const s=slots.find(x=>x.dataset.active!=='1');if(!s)return;const w=chooseWord(forceTarget);s.textContent=safe(w.en)||'[word]';s.dataset.en=safe(w.en);s.dataset.correct=(safe(w.en)===safe(game.target.en))?'1':'0';s.dataset.active='1';s.dataset.y=String(stage.clientHeight-74);s.dataset.speed=String(2.2+Math.random()*1.7);s.style.left=(8+Math.random()*70)+'%';s.style.top=(stage.clientHeight-74)+'px';s.style.visibility='visible';s.style.opacity='1';s.style.transform='none';s.classList.add('show')}
-function moveAll(){if(game.over)return;slots.forEach(s=>{if(s.dataset.active!=='1')return;let y=Number(s.dataset.y||0)-Number(s.dataset.speed||2.5);s.dataset.y=String(y);s.style.top=y+'px';if(y<-70){const wasCorrect=s.dataset.correct==='1';hideSlot(s);if(wasCorrect){game.lives--;hud();if(game.lives<=0){endGame();return}else chooseTarget()}}})}
-function cutSlot(s){if(game.over||s.dataset.active!=='1')return;const correct=s.dataset.correct==='1';s.classList.add('cut');setTimeout(()=>hideSlot(s),120);if(correct){game.score+=10;chooseTarget();hud();setTimeout(()=>spawn(true),120)}else{game.lives--;hud();if(game.lives<=0)endGame()}}
+function targetKey(){return `B${BOOK_NO}|L${LEVEL}|Q${game.index+1}|${safe(game.target?.en)}`}
+async function track(event_type,extra={}){if(!sid())return;try{await fetch(API+'/api/event',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid(),book_no:BOOK_NO,book_title:BOOK_TITLE,event_type,quiz_mode:'Ninja Level '+LEVEL,...extra})})}catch(e){}}
+async function loadCloud(){if(!sid())return;try{const d=await(await fetch(API+'/api/progress/get?student_id='+encodeURIComponent(sid()))).json();CLOUD=Object.assign(CLOUD,d.progress||{})}catch(e){}}
+function showTarget(){if(game.index>=game.order.length){endGame();return}game.target=game.order[game.index];game.targetMistake=false;zhHint.textContent=safe(game.target.zh||game.target.ms||game.target.en);msHint.textContent=game.target.ms?'Bahasa Melayu: '+game.target.ms:'';hud();resetSlots();spawn(true);setTimeout(()=>spawn(false),900);status('找出正确英文：'+safe(game.target.zh||game.target.ms),'')}
+function chooseWord(forceTarget){if(forceTarget||Math.random()<.45)return game.target;const others=pool.filter(x=>safe(x.en)!==safe(game.target.en));return others[Math.floor(Math.random()*others.length)]||game.target}
+function spawn(forceTarget=false){if(game.over||!game.target)return;const s=slots.find(x=>x.dataset.active!=='1');if(!s)return;const w=chooseWord(forceTarget);s.textContent=safe(w.en)||'[word]';s.dataset.en=safe(w.en);s.dataset.correct=(safe(w.en)===safe(game.target.en))?'1':'0';s.dataset.active='1';s.dataset.targetKey=targetKey();s.dataset.y=String(stage.clientHeight-74);s.dataset.speed=String(1.15+Math.random()*.55);s.style.left=(8+Math.random()*70)+'%';s.style.top=(stage.clientHeight-74)+'px';s.style.visibility='visible';s.style.opacity='1';s.style.transform='none';s.classList.add('show')}
+function moveAll(){if(game.over)return;slots.forEach(s=>{if(s.dataset.active!=='1')return;let y=Number(s.dataset.y||0)-Number(s.dataset.speed||1.4);s.dataset.y=String(y);s.style.top=y+'px';if(y<-70){const wasCorrect=s.dataset.correct==='1',sameQuestion=s.dataset.targetKey===targetKey();hideSlot(s);if(wasCorrect&&sameQuestion)resolveTarget(false,'[missed]')}})}
+async function resolveTarget(hitClean,answerText){if(game.over||!game.target)return;const t=game.target,key=targetKey(),mastered=!!hitClean&&!game.targetMistake;if(mastered)game.correct++;else game.missed+=answerText==='[missed]'?1:0;await track('answer',{question_key:key,question_text:safe(t.zh||t.ms||t.en),answer_text:safe(answerText),is_correct:mastered});game.index++;hud();if(game.index>=game.order.length){endGame();return}setTimeout(showTarget,300)}
+function cutSlot(s){if(game.over||s.dataset.active!=='1'||s.dataset.targetKey!==targetKey())return;const selected=s.dataset.en,correct=s.dataset.correct==='1';s.classList.add('cut');setTimeout(()=>hideSlot(s),120);if(correct){game.score+=10;status(game.targetMistake?'砍到正确词 +10，但本题曾砍错，已记录为需复习':'正确！ +10','good');resolveTarget(true,selected)}else{game.score=Math.max(0,game.score-5);game.wrongCuts++;game.targetMistake=true;status('砍错 '+selected+'  -5，目标词继续','bad');hud();track('ninja_wrong_cut',{question_key:targetKey(),question_text:safe(game.target.zh||game.target.ms||game.target.en),answer_text:selected,is_correct:false});setTimeout(()=>spawn(true),250)}}
 slots.forEach(s=>{s.addEventListener('click',e=>{e.preventDefault();cutSlot(s)});s.addEventListener('touchstart',e=>{e.preventDefault();cutSlot(s)},{passive:false})});
-function endGame(){game.over=true;clearInterval(spawnTimer);clearInterval(moveTimer);document.getElementById('endText').textContent=`得分 ${game.score} 分 · 完成 ${Math.max(0,game.round-1)} 个目标词汇`;overlay.classList.add('show')}
-async function load(){try{let saved=sessionStorage.getItem('ninjaVocabPool'),source=sessionStorage.getItem('ninjaVocabSource');if(saved&&(!source||source===file))pool=JSON.parse(saved);if(!Array.isArray(pool)||pool.length<4){const html=await fetch(file,{cache:'no-store'}).then(r=>r.text()),m=html.match(/const\s+WORDS\s*=\s*(\[[\s\S]*?\]);/);if(!m)throw Error('WORDS not found');pool=Function('return '+m[1])().filter(w=>w&&(w.en||w.word)&&(w.zh||w.ms));pool=pool.map(w=>({en:w.en||w.word,zh:w.zh||'',ms:w.ms||''}))}if(!pool.length)throw Error('empty pool');pool=pool.map(w=>({en:w.en||w.word||'',zh:w.zh||'',ms:w.ms||''})).filter(w=>w.en);document.getElementById('bookLabel').textContent=`${pool.length} Words · Meaning Quiz`;reset()}catch(e){zhHint.textContent='无法读取词汇';msHint.textContent='请返回 Vocabulary Book 后再进入 Meaning Quiz';console.error(e)}}
+async function endGame(){if(game.over)return;game.over=true;clearInterval(spawnTimer);clearInterval(moveTimer);resetSlots();const total=game.order.length,accuracy=Math.round(game.correct/Math.max(1,total)*100),mastered=accuracy>=80;const result={book_no:BOOK_NO,level:LEVEL,total,correct:game.correct,wrong_cuts:game.wrongCuts,missed:game.missed,score:game.score,accuracy,mastered,finished_at:new Date().toISOString()};try{localStorage.setItem('ninjaLevelResult:'+sid()+':'+BOOK_NO+':'+LEVEL,JSON.stringify(result))}catch(e){}
+  if(sid()){try{await fetch(API+'/api/progress/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid(),total_xp:+CLOUD.total_xp||0,current_streak:+CLOUD.current_streak||0,best_streak:+CLOUD.best_streak||0,books_started:+CLOUD.books_started||0,books_mastered:+CLOUD.books_mastered||0,book_no:BOOK_NO,level_no:LEVEL,mastery:accuracy,attempts:total,correct:game.correct,unlocked:true,mastered})})}catch(e){}await track('ninja_level_complete',{question_key:`B${BOOK_NO}|L${LEVEL}|SUMMARY`,question_text:'Ninja Level '+LEVEL,answer_text:`Score ${game.score}; ${game.correct}/${total}; wrong cuts ${game.wrongCuts}; missed ${game.missed}`,is_correct:mastered})}
+  document.getElementById('endTitle').textContent=mastered?'LEVEL MASTERED!':'LEVEL COMPLETE';document.getElementById('endText').innerHTML=`<div class="resultGrid"><div><b>${game.score}</b><br>Score</div><div><b>${accuracy}%</b><br>Accuracy</div><div><b>${game.correct} / ${total}</b><br>Mastered Words</div><div><b>${game.wrongCuts + game.missed}</b><br>Errors</div></div><p>砍错：${game.wrongCuts} 次 · 漏掉目标：${game.missed} 次<br>${mastered?'达到 80% Mastery，Level 记录已保存。':'未达到 80%，建议重新挑战这一 Level。'}</p>`;overlay.classList.add('show')}
+function reset(){clearInterval(spawnTimer);clearInterval(moveTimer);resetSlots();overlay.classList.remove('show');game={score:0,index:0,correct:0,wrongCuts:0,missed:0,target:null,targetMistake:false,over:false,order:shuffle(pool)};hud();showTarget();spawnTimer=setInterval(()=>spawn(false),1700);moveTimer=setInterval(moveAll,40);track('ninja_level_start',{question_key:`B${BOOK_NO}|L${LEVEL}|START`,question_text:'Ninja Level '+LEVEL,answer_text:pool.map(x=>x.en).join(', '),is_correct:true})}
+async function load(){try{await loadCloud();let saved=sessionStorage.getItem('ninjaVocabPool'),source=sessionStorage.getItem('ninjaVocabSource');if(saved&&(!source||source===file))fullPool=JSON.parse(saved);if(!Array.isArray(fullPool)||fullPool.length<4){const html=await fetch(file,{cache:'no-store'}).then(r=>r.text()),m=html.match(/const\s+WORDS\s*=\s*(\[[\s\S]*?\]);/);if(!m)throw Error('WORDS not found');fullPool=Function('return '+m[1])()}fullPool=fullPool.map(w=>({en:w.en||w.word||'',zh:w.zh||'',ms:w.ms||''})).filter(w=>w.en&&(w.zh||w.ms));if(!fullPool.length)throw Error('empty pool');const start=(LEVEL-1)*20;pool=fullPool.slice(start,start+20);if(pool.length<4)pool=shuffle(fullPool).slice(0,Math.min(20,fullPool.length));document.getElementById('bookLabel').textContent=`Level ${LEVEL} · ${pool.length} Words · Meaning Quiz`;reset()}catch(e){zhHint.textContent='无法读取词汇';msHint.textContent='请返回 Vocabulary Book 后再进入 Meaning Quiz';status('词汇载入失败','bad');console.error(e)}}
 document.getElementById('restartBtn').onclick=reset;document.getElementById('playAgain').onclick=reset;document.getElementById('backBtn').onclick=()=>{if(history.length>1)history.back();else location.href=file};
 load();
 </script>
